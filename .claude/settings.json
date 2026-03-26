@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__UnityMCP__manage_material",
+      "mcp__UnityMCP__manage_vfx",
+      "mcp__UnityMCP__apply_text_edits",
+      "mcp__UnityMCP__get_sha",
+      "mcp__UnityMCP__manage_script",
+      "mcp__UnityMCP__script_apply_edits",
+      "mcp__UnityMCP__delete_script",
+      "mcp__UnityMCP__create_script",
+      "mcp__UnityMCP__manage_editor",
+      "mcp__UnityMCP__manage_camera"
+    ]
+  }
+}

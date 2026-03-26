@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8080/mcp --connect-timeout 5)",
+      "Bash(curl -s http://127.0.0.1:8080/mcp)",
+      "WebSearch",
+      "Bash(pip index:*)",
+      "Bash(pip search:*)",
+      "Bash(pip install:*)",
+      "Bash(uv pip:*)",
+      "Bash(uv search:*)",
+      "Bash(pip config:*)",
+      "Bash(wmic process:*)",
+      "mcp__UnityMCP__manage_scene",
+      "mcp__UnityMCP__manage_gameobject",
+      "mcp__UnityMCP__manage_asset",
+      "mcp__UnityMCP__execute_menu_item",
+      "mcp__UnityMCP__manage_components",
+      "mcp__UnityMCP__manage_prefabs",
+      "mcp__UnityMCP__find_gameobjects",
+      "mcp__UnityMCP__refresh_unity"
+    ]
+  }
+}
