@@ -67,7 +67,7 @@ namespace Manager {
             //先判断总包是否加载过
             if (single == null) {
                 if (!File.Exists(ABPath + SingleABName)) {
-                    Debug.LogWarning($"未找到路径: {ABPath}{SingleABName}");
+                    Debug.LogWarning($"未找到路径: {ABPath}{SingleABName} abName={abName}");
                     return null;
                 }
                 single = AssetBundle.LoadFromFile(ABPath + SingleABName);
@@ -152,6 +152,7 @@ namespace Manager {
         public T LoadAsset<T>(string assetName, string abName)
             where T : Object {
             //先获取AB包, 利用加载AB包的方法获取AB包，即使之前加载过，方法内部判断了不会重复的加载
+            Debug.Log($"[LoadAsset] abName = {abName}");
             AssetBundle ab = LoadAssetBundle(abName);
             if (ab != null && ab.Contains(assetName)) {
                 //从AB包中获取资源

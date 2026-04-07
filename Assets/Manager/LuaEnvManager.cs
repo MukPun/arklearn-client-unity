@@ -37,6 +37,7 @@ namespace Manager {
             filepath = luaScriptsFolder + filepath.Replace(".", "/") + ".lua";
             string[] args = filepath.Split('/');
             string name = args[args.Length - 1];
+            // Debug.Log($"[LoadLuaText] filepath={filepath}, name={name}");
             TextAsset textAsset = Asset.Load<TextAsset>(filepath.Substring(0, filepath.Length - name.Length), name);
             return textAsset == null ? null : textAsset.text;
         }

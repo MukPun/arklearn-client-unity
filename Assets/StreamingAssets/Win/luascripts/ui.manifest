@@ -1,0 +1,24 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.3.10f1
+CRC: 3491221066
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 55437d1adb86e65a4b8b1c067713de11
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 5ad585dd02dfb5016c0dad519eab8f49
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: f957e6495d2c0bfd81e76fccfeb51901
+HashAppended: 0
+ClassTypes:
+- Class: 49
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/LuaScripts/UI/HomeUI.lua.txt
+- Assets/LuaScripts/UI/CharUI.lua.txt
+- Assets/Resources/LuaScripts/UI/HomeUI.lua.txt
+- Assets/Resources/LuaScripts/UI/CharUI.lua.txt
+Dependencies: []

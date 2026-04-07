@@ -28,6 +28,10 @@ Object = CS.UnityEngine.Object
 
 DOTween = CS.DG.Tweening.DOTween
 
+DOTweenHelper = CS.Scripts.Game.DOTweenHelper
+
+InputHelper = CS.Scripts.Game.InputHelper
+
 DateTime = CS.System.DateTime
 
 Asset = CS.Tools.Asset

@@ -1,6 +1,7 @@
 ﻿using System;
 using Manager;
 using Tools;
+using UnityEngine;
 using XLua;
 
 namespace UI {
@@ -30,7 +31,9 @@ namespace UI {
             foreach (Injection injection in injections) {//带入脚本变量
                 scriptEnv.Set(injection.name, injection.value);
             }
-            LuaEnv.DoString(LuaEnvManager.LoadLuaText("UI." + Name), "chunk", scriptEnv);
+            string luaText = LuaEnvManager.LoadLuaText("UI." + Name);
+            // Debug.Log($"[RuaUI] LoadLuaText UI.{Name} = {luaText.Length}");
+            LuaEnv.DoString(luaText, "chunk", scriptEnv);
             
             scriptEnv.Get("update", out luaUpdate);
             scriptEnv.Get("updateView", out luaUpdateView);

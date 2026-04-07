@@ -5961,7 +5961,7 @@ GameObject:
   - component: {fileID: 1924545188421692078}
   - component: {fileID: 2234603692473746867}
   - component: {fileID: 1500738053612850455}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9381,7 +9381,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8115223792101920381}
   - component: {fileID: 594152722623475242}
-  - component: {fileID: 6796744000775971961}
   - component: {fileID: 9153493100797802523}
   - component: {fileID: 6700689792647043664}
   m_Layer: 0
@@ -9445,7 +9444,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 23
+    m_Bits: 32
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: 0de94c7f4aebd6e46ada8e8c3774788c, type: 2}
   m_TargetDisplay: 0
@@ -9457,14 +9456,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &6796744000775971961
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8728836454771876005}
-  m_Enabled: 1
 --- !u!114 &9153493100797802523
 MonoBehaviour:
   m_ObjectHideFlags: 0

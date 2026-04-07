@@ -2,6 +2,7 @@
 using DG.Tweening;
 using Settings;
 using Manager;
+using Tools;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,8 @@ namespace UI.Sub {
         public ToggleController game_performance;
         public Slider game_profileScreen;
         public Button game_exit;
+
+        public Button bcak;
 
         public ToggleController sound_soundEffect;
         public Slider sound_soundEffect_value;
@@ -35,7 +38,7 @@ namespace UI.Sub {
             game_keep_speed.onValueChanged.AddListener(value => GameSettings.GAME_KEEP_SPEED = value);
             game_performance.onValueChanged.AddListener(value => GameSettings.GAME_PERFORMANCE = value);
             game_profileScreen.onValueChanged.AddListener(value => {
-                GameSettings.GAME_PROFILED_SCREEN = (int) value;
+                GameSettings.GAME_PROFILED_SCREEN = (int) (value*100);
             });
 
             sound_soundEffect.onValueChanged.AddListener(value => {
@@ -43,7 +46,7 @@ namespace UI.Sub {
                 SoundManager.Inst().UpdateData();
             });
             sound_soundEffect_value.onValueChanged.AddListener(value => {
-                GameSettings.SOUND_SOUND_EFFECT_VALUE = (int) value;
+                GameSettings.SOUND_SOUND_EFFECT_VALUE = (int) (value*100);
                 SoundManager.Inst().UpdateData();
             });
             sound_music.onValueChanged.AddListener(value => {
@@ -51,7 +54,7 @@ namespace UI.Sub {
                 SoundManager.Inst().UpdateData();
             });
             sound_music_value.onValueChanged.AddListener(value => {
-                GameSettings.SOUND_MUSIC_VALUE = (int) value;
+                GameSettings.SOUND_MUSIC_VALUE = (int) (value*100);
                 SoundManager.Inst().UpdateData();
             });
             sound_voice.onValueChanged.AddListener(value => {
@@ -59,7 +62,7 @@ namespace UI.Sub {
                 SoundManager.Inst().UpdateData();
             });
             sound_voice_value.onValueChanged.AddListener(value => {
-                GameSettings.SOUND_VOICE_VALUE = (int) value;
+                GameSettings.SOUND_VOICE_VALUE = (int) (value*100);
                 SoundManager.Inst().UpdateData();
             });
 
@@ -74,6 +77,10 @@ namespace UI.Sub {
                     DOTween.To(() => v,value => v = value,3,2f).OnComplete(() => UIManager.Inst().Show("LoginUI"));
                 });
             });
+
+            bcak.onClick.AddListener(() =>{
+                UIManager.Inst().Hide("SettingUI",true);
+            });
         }
 
         public override void Show() {
@@ -87,10 +94,24 @@ namespace UI.Sub {
         }
 
         public override void Hide(bool destroy = false) {
-            Material blurryShader = blur.material;
-            float value = blurryShader.GetFloat("_Size");
-            DOTween.To(() => value,v => value = v,0,0.2f).OnUpdate(() => blurryShader.SetFloat("_Size",value));
-            canvasGroup.DOFade(0,0.2f).OnComplete(() => { base.Hide(destroy); });
+            DOTween.Kill(canvasGroup);
+            if (blur != null) {
+                Material blurryShader = blur.material;
+                if (blurryShader != null) {
+                    DOTween.Kill(blurryShader);
+                    float value = blurryShader.GetFloat("_Size");
+                    DOTween.To(() => value, v => v = v, 0, 0.2f).OnUpdate(() => {
+                        if (blurryShader != null) blurryShader.SetFloat("_Size", value);
+                    });
+                }
+            }
+            if (canvasGroup != null) {
+                canvasGroup.DOFade(0, 0.2f).OnComplete(() => {
+                    if (this != null) base.Hide(destroy);
+                });
+            } else {
+                base.Hide(destroy);
+            }
         }
     }
 }

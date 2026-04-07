@@ -11,7 +11,7 @@ namespace Data.Player {
         private PlayerData playerData;
 
         public PlayerManager() {
-            list.Add(Asset.Load<PlayerData>("Data/User", "Saukiya"));
+            list.Add(Asset.Load<PlayerData>("Data/User", "MukPun"));
             list.Add(Asset.Load<PlayerData>("Data/User", "Test"));
         }
 

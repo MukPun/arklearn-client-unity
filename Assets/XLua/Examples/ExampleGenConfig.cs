@@ -48,7 +48,20 @@ public static class ExampleGenConfig
                 typeof(Mathf),
                 typeof(System.Collections.Generic.List<int>),
                 typeof(Action<string>),
-                typeof(UnityEngine.Debug)
+                typeof(UnityEngine.Debug),
+                // DOTween types for extension methods
+                typeof(DG.Tweening.DOTween),
+                typeof(DG.Tweening.ShortcutExtensions),
+                typeof(DG.Tweening.Tween),
+                typeof(DG.Tweening.Tweener),
+                typeof(DG.Tweening.TweenExtensions),
+                typeof(UnityEngine.CanvasGroup),
+                typeof(UnityEngine.UI.Button),
+                typeof(UnityEngine.UI.Image),
+                typeof(UnityEngine.UI.Text),
+                typeof(UnityEngine.RectTransform),
+                typeof(UnityEngine.SpriteRenderer),
+                typeof(UnityEngine.Events.UnityAction)
             };
 
     //C#静态调用Lua的配置（包括事件的原型），仅可以配delegate，interface

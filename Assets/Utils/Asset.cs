@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Tools {
     public class Asset {
         public static T Load<T>(string path, string name) where T : Object {
+            // Debug.Log($"[T-Asset] path={path}, name={name} ");
             return ABManager.Inst().LoadAsset<T>(name, path) ?? Resources.Load<T>(Path.Combine(path, name));
         }
         

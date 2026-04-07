@@ -112,11 +112,11 @@ namespace UI.Sub {
             login_enter.onClick.AddListener(() => {
                 string userName = login_userName.text;
                 string password = login_password.text;
-                // PlayerData playerData = PlayerManager.Inst().Login(userName, password);
-                // if (playerData == null) {
-                //     CommonDialogUI.Message(CommonDialogUI.GroundType.BLACK, "用户名或密码错误 请重新登录");
-                //     return;
-                // }
+                PlayerData playerData = PlayerManager.Inst().Login(userName, password);
+                if (playerData == null) {
+                    CommonDialogUI.Message(CommonDialogUI.GroundType.BLACK, "用户名或密码错误 请重新登录");
+                    return;
+                }
                 // 登陆界面消失
                 lowerRightPanel.DOFade(0,0.5f);
                 

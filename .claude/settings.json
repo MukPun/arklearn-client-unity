@@ -10,7 +10,18 @@
       "mcp__UnityMCP__delete_script",
       "mcp__UnityMCP__create_script",
       "mcp__UnityMCP__manage_editor",
-      "mcp__UnityMCP__manage_camera"
+      "mcp__UnityMCP__manage_camera",
+      "mcp__UnityMCP__set_active_instance",
+      "Bash(find i:/Sofware/Unity/MukPun/ArknightsLearn/Assets/StreamingAssets -type f -name *Win*)",
+      "mcp__UnityMCP__debug_request_context",
+      "Bash(find i:/Sofware/Unity/MukPun/ArknightsLearn/Assets/Resources -type f \\\\\\(-name *.prefab -o -name *.wav -o -name *.mp3 -o -name *.ogg \\\\\\))",
+      "Bash(grep -rn GenConfig i:/Sofware/Unity/MukPun/ArknightsLearn/Assets/ --include=*.cs)",
+      "mcp__UnityMCP__manage_build",
+      "mcp__UnityMCP__execute_code"
+    ],
+    "additionalDirectories": [
+      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\Resources\\Prefab\\UI",
+      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\UI"
     ]
   }
 }
