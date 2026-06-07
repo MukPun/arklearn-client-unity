@@ -1,5 +1,6 @@
 using Manager;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Scripts.Debug {
     /// <summary>
@@ -21,7 +22,11 @@ namespace Scripts.Debug {
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.F12)) _show = !_show;
+            // 用 new Input System(项目 manifest 已引入 com.unity.inputsystem),
+            // 与 InputHelper.cs 一致;legacy Input.GetKeyDown 在 ActiveInputHandling=New 时不会 fire
+            if (Keyboard.current != null && Keyboard.current.f12Key.wasPressedThisFrame) {
+                _show = !_show;
+            }
         }
 
         private void OnGUI() {
