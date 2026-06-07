@@ -16,4 +16,5 @@
 
 # 你可以使用的Skills
 - unity-mcp-skill
+- find-skill
 - 以及其他你拥有的Skills

@@ -17,11 +17,21 @@
       "Bash(find i:/Sofware/Unity/MukPun/ArknightsLearn/Assets/Resources -type f \\\\\\(-name *.prefab -o -name *.wav -o -name *.mp3 -o -name *.ogg \\\\\\))",
       "Bash(grep -rn GenConfig i:/Sofware/Unity/MukPun/ArknightsLearn/Assets/ --include=*.cs)",
       "mcp__UnityMCP__manage_build",
-      "mcp__UnityMCP__execute_code"
+      "mcp__UnityMCP__execute_code",
+      "mcp__UnityMCP__manage_scriptable_object",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Read(//g/Lua/**)",
+      "Bash(env)",
+      "Bash(\"/g/Lua/lua54.exe\" -e \"print\\('path:'\\); print\\(package.path\\); print\\('cpath:'\\); print\\(package.cpath\\)\")",
+      "mcp__MiniMax__web_search",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "additionalDirectories": [
       "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\Resources\\Prefab\\UI",
-      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\UI"
+      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\UI",
+      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets"
     ]
   }
 }

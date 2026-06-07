@@ -97,3 +97,11 @@ crashlytics-build.properties
 /[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
 /[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
 /[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+
+# 调试/参考用临时图（GUID 文件名或 home/111 之类的占位图）
+/[Aa]ssets/[Ii]mage/
+/[Aa]ssets/[Ii]mage.meta
+
+# 任意子目录下的设计软件截图
+ScreenShot_*.png
+ScreenShot_*.png.meta
