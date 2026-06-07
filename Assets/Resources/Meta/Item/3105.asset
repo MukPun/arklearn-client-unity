@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36143f2c0974c9a4e952ff19c5230ee3, type: 3}
+  m_Name: 3105
+  m_EditorClassIdentifier: Assembly-CSharp::Data.Item.ItemMeta
+  <id>k__BackingField: 3105
+  <name>k__BackingField: "\u9F99\u9AA8"
+  <icon>k__BackingField: {fileID: 21300000, guid: 71bfef461731ae840b2fffb4a7e2a76a, type: 3}
+  <rarity>k__BackingField: 5
+  <type>k__BackingField: 1
+  <useInfo>k__BackingField: "\u7CBE\u5BC6\u7684\u4EBA\u9020\u6784\u4EF6\uFF0C\u662F\u57FA\u7840\u5EFA\u8BBE\u7684\u6838\u5FC3\u6750\u6599\u3002"
+  <description>k__BackingField: "\u6574\u4E2A\u7F57\u5FB7\u5C9B\u5F97\u4EE5\u6784\u6210\u7684\u57FA\u7840\u3002\u4E0D\u77E5\u9053\u4E3A\u4F55\uFF0C\u7F57\u5FB7\u5C9B\u5728\u4E00\u4E9B\u7279\u522B\u7684\u8BBE\u65BD\u4E2D\u4F1A\u7ECF\u5E38\u4F7F\u7528\u8FD9\u79CD\u7ED3\u6784\u590D\u6742\u4E14\u5FC5\u987B\u7279\u522B\u5236\u4F5C\u6216\u8D2D\u4E70\u7684\u5DE8\u578B\u539F\u4EF6\u3002"
+  <waysObtain>k__BackingField: "\u4E3B\u9898\u66F21-1\u30011-8\u30013-4\u30014-7\u9996\u6B21\u901A\u5173\u6389\u843D"

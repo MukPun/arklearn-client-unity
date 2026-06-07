@@ -1,0 +1,207 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c391777954c66c240a0dc3a2d9bd1b93, type: 3}
+  m_Name: ShopItemDataList
+  m_EditorClassIdentifier: Assembly-CSharp::Manager.ShopItemDataList
+  list:
+  - sellItem:
+      id: 2001
+      amount: 30
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 2002
+      amount: 10
+    priceItem:
+      id: 4005
+      amount: 500
+  - sellItem:
+      id: 2003
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 1000
+  - sellItem:
+      id: 2004
+      amount: 4
+    priceItem:
+      id: 4005
+      amount: 1500
+  - sellItem:
+      id: 3003
+      amount: 8
+    priceItem:
+      id: 4005
+      amount: 10
+  - sellItem:
+      id: 3112
+      amount: 1
+    priceItem:
+      id: 4005
+      amount: 5
+  - sellItem:
+      id: 3113
+      amount: 1
+    priceItem:
+      id: 4005
+      amount: 15
+  - sellItem:
+      id: 3114
+      amount: 1
+    priceItem:
+      id: 4005
+      amount: 20
+  - sellItem:
+      id: 3131
+      amount: 20
+    priceItem:
+      id: 4005
+      amount: 20
+  - sellItem:
+      id: 3132
+      amount: 20
+    priceItem:
+      id: 4005
+      amount: 40
+  - sellItem:
+      id: 3133
+      amount: 20
+    priceItem:
+      id: 4005
+      amount: 60
+  - sellItem:
+      id: 3141
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 300
+  - sellItem:
+      id: 3211
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3221
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3231
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3241
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3251
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3261
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3271
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3281
+      amount: 5
+    priceItem:
+      id: 4005
+      amount: 100
+  - sellItem:
+      id: 3212
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3222
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3232
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3242
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3252
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3262
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3272
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 3282
+      amount: 5
+    priceItem:
+      id: 4004
+      amount: 100
+  - sellItem:
+      id: 4001
+      amount: 50
+    priceItem:
+      id: 4004
+      amount: 500
+  - sellItem:
+      id: 4002
+      amount: 5
+    priceItem:
+      id: 7
+      amount: 300
+  - sellItem:
+      id: 4004
+      amount: 20
+    priceItem:
+      id: 4004
+      amount: 200
+  - sellItem:
+      id: 7004
+      amount: 20
+    priceItem:
+      id: 4004
+      amount: 99999

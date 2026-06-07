@@ -68,9 +68,9 @@ function updateView()
     syntheticJade:GetComponent("Text").text = "0"
     dragonCoin:GetComponent("Text").text = "0"
 
-    sourceStone:GetComponent("Text").text = tostring(data:GetItemAmount(0));
-    syntheticJade:GetComponent("Text").text = tostring(data:GetItemAmount(1));
-    dragonCoin:GetComponent("Text").text = tostring(data:GetItemAmount(2));
+    sourceStone:GetComponent("Text").text = tostring(data:GetItemAmount(4002));
+    syntheticJade:GetComponent("Text").text = tostring(data:GetItemAmount(4003));
+    dragonCoin:GetComponent("Text").text = tostring(data:GetItemAmount(4001));
     item = data:GetItemStack(1)
 end
 
