@@ -10,7 +10,7 @@ namespace Data.Item {
 
         public ItemManager() {
             // ItemGround
-            Sprite[] sprites = Asset.LoadAll<Sprite>("Sprite/Item","ItemGround");
+            Sprite[] sprites = Asset.LoadAll<Sprite>("Sprite/ItemGround","");
             foreach (Sprite sprite in sprites) {
                 if (!sprite.name.StartsWith("item_ground_")) continue;
                 itemGround.Add(int.Parse(sprite.name.Substring(12)), sprite);

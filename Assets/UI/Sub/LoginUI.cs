@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace UI.Sub {
     public class LoginUI : UIBase {
 
-        private const float sphere_diameter = 1080f;
+        private const float sphere_diameter = 720f;
         private const float sphere_radius = sphere_diameter / 2f;
 
         public RectTransform sphere;

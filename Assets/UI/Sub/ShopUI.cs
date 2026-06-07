@@ -49,9 +49,48 @@ namespace UI.Sub {
             base.Show();
             canvasGroup.alpha = 0;
             canvasGroup.DOFade(1, 0.3f);
+
+            // 根据当前 toggles 的选择状态触发对应事件
+            
+            TriggerToggleEvents();
+            TriggerToggleGrodunEvents();
+
             SoundManager.Inst().PlayMusic(clip, false, () => {
                 SoundManager.Inst().PlayMusic(loop_clip, true);
             });
+        }
+
+        private void TriggerToggleEvents() {
+            Transform ar = transform.Find("pz_panel/ar");
+            if (ar == null) {
+                return;
+            }
+
+            // 遍历 ar 下的所有子对象（toggle）
+            foreach (Transform child in ar) {
+                Toggle toggle = child.GetComponent<Toggle>();
+                if (toggle != null && toggle.isOn) {
+                    // 触发该 toggle 的 onValueChanged 事件
+                    toggle.onValueChanged.Invoke(true);
+                    break; // 只触发一个
+                }
+            }
+        }
+
+        private void TriggerToggleGrodunEvents() {
+            Transform tg = transform.Find("toggle_ground");
+            if (tg == null) {
+                return;
+            }
+
+            // 遍历 tg 下的所有子对象（toggle）
+            foreach (Transform child in tg) {
+                Toggle toggle = child.GetComponent<Toggle>();
+                if (toggle != null) {
+                    // 触发该 toggle 的 onValueChanged 事件
+                    toggle.onValueChanged.Invoke(toggle.isOn);
+                }
+            }
         }
 
         public override void Hide(bool destroy = false) {
@@ -63,15 +102,15 @@ namespace UI.Sub {
 
         public override void UpdateView() {
             data = PlayerManager.Inst().Get();
-            cur_zzpz.text = data.GetItemAmount(6).ToString();
-            cur_gjpz.text = data.GetItemAmount(7).ToString();
-            cur_cgpz.text = data.GetItemAmount(8).ToString();
-            cur_lmb.text = data.GetItemAmount(2).ToString();
-            cur_ys.text = data.GetItemAmount(0).ToString();
+            cur_zzpz.text = data.GetItemAmount(4005).ToString();
+            cur_gjpz.text = data.GetItemAmount(4004).ToString();
+            cur_cgpz.text = data.GetItemAmount(4006).ToString();
+            cur_lmb.text = data.GetItemAmount(4001).ToString();
+            cur_ys.text = data.GetItemAmount(4002).ToString();
         }
 
         public void ShowPriceItem(int id) {
-            List<ShopItemData> dataList = ShopManager.Inst().GetShopItems(id);
+           List<ShopItemData> dataList = ShopManager.Inst().GetShopItems(id);
             for (int i = 0; i < dataList.Count || i < list.Count; i++) {
                 if (i < dataList.Count) {
                     if (list.Count <= i) {
@@ -87,11 +126,11 @@ namespace UI.Sub {
         
         public Sprite GetPriceIcon(int id) {
             switch (id) {
-                case 6:
+                case 4005:
                     return zzpz_icon;
-                case 7:
+                case 4004:
                     return gjpz_icon;
-                case 8:
+                case 4006:
                     return cgpz_icon;
             }
             return null;

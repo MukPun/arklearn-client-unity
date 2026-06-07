@@ -20,5 +20,17 @@ MonoBehaviour:
   charList: []
   squad: []
   desktopChar: 
-  items: []
+  items:
+  - id: 4001
+    amount: 10000
+  - id: 4002
+    amount: 99999
+  - id: 4004
+    amount: 100000
+  - id: 4005
+    amount: 99100
+  - id: 4006
+    amount: 100000
+  - id: 4003
+    amount: 99999
   permissions: []

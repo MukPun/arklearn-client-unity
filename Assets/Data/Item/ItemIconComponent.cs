@@ -16,6 +16,7 @@ namespace Data.Item {
         
         public void SetMeta(ItemMeta value) {
             meta = value;
+            Debug.Log($"[ItemIconComponent] SetMeta: {value}");
             ground.sprite = ItemManager.Inst().GetItemGround(meta.GetRarity());
             icon.sprite = meta.GetIcon();
         }
