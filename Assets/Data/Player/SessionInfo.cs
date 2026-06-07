@@ -13,6 +13,7 @@ namespace Data.Player {
         public string GameHost  { get; private set; }
         public int    GamePort  { get; private set; }
 
+        // Secret 作为「已登录」的判定信号；其他字段是辅助载荷
         public bool   HasSession => !string.IsNullOrEmpty(Secret);
 
         public void SaveLoginResponse(long uid, long subid,
