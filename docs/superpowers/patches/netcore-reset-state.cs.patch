@@ -1,0 +1,17 @@
+# 此文件是 NetCore.cs 的 ResetState() 补丁备份
+# 来源：sproto-Unity (https://github.com/m2q1n9/sproto-Unity)
+# 目标：Assets/Sproto/sproto-Unity/sproto-Unity/NetCore.cs 文末（类闭合 } 之前）
+# 用途：换电脑/重装/重 clone sproto-Unity 后，需要手动把下面这段贴回原位置
+
+        /// <summary>
+        /// 切换服务器前清理静态状态。
+        /// 必须在 Disconnect() 之后、Connect() 之前的同一主线程帧内调用，
+        /// 此时 IO 线程不会再产生新 Receive 回调（旧 socket 已 Close）。
+        /// </summary>
+        public static void ResetState()
+        {
+            recvQueue.Clear();
+            sessionDict.Clear();
+            receivePosition = 0;
+            recvStream.Seek(0, System.IO.SeekOrigin.Begin);
+        }
