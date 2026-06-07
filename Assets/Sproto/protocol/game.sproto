@@ -1,0 +1,12 @@
+.package {
+  type 0 : integer
+  session 1 : integer
+}
+
+handshake 1 {
+	response {
+		msg 0  : string
+	}
+}
+
+heartbeat 2 {}
