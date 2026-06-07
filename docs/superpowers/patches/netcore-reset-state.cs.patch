@@ -13,5 +13,5 @@
             recvQueue.Clear();
             sessionDict.Clear();
             receivePosition = 0;
-            recvStream.Seek(0, System.IO.SeekOrigin.Begin);
+            recvStream.Seek(0, SeekOrigin.Begin);
         }
