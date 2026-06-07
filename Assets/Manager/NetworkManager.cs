@@ -84,6 +84,9 @@ namespace Manager {
         }
 
         private void OnLoginSocketConnected(string user, string password) {
+            // Defensive: NetCore connect 回调极少情况下可能被触发两次（library quirk / 网络异常），
+            // 用 stage guard 保证 idempotent，避免重复发包 + 启动重复 watchdog
+            if (CurrentStage != Stage.LoginConnecting) return;
             ChangeStage(Stage.LoginRequesting);
             StartCoroutine(WatchdogTimeout(Stage.LoginRequesting,
                 GameSettings.NET_RPC_TIMEOUT_SEC));
@@ -122,6 +125,8 @@ namespace Manager {
 
         // ===== Phase 2: 连 game，发 handshake =====
         private void OnGameSocketConnected() {
+            // Defensive: 同 OnLoginSocketConnected,防双回调
+            if (CurrentStage != Stage.GameConnecting) return;
             ChangeStage(Stage.GameHandshaking);
             StartCoroutine(WatchdogTimeout(Stage.GameHandshaking,
                 GameSettings.NET_RPC_TIMEOUT_SEC));
