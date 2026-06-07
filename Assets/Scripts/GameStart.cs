@@ -13,8 +13,11 @@ namespace Scripts {
             UIManager.Inst().Show("LoginUI");
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            new GameObject("NetworkTestUI")
-                .AddComponent<Scripts.Debug.NetworkTestUI>();    // ⭐ 新增:调试入口
+            // 与 NetworkManager (DontDestroyOnLoad) 对齐生命周期,
+            // 否则场景切换会导致 NetTestUI 死亡,事件订阅变悬空引用
+            var debugUiGo = new GameObject("NetworkTestUI");
+            debugUiGo.AddComponent<Scripts.Debug.NetworkTestUI>();    // ⭐ 新增:调试入口
+            DontDestroyOnLoad(debugUiGo);
 #endif
             Destroy(gameObject);
         }
