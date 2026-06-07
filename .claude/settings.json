@@ -26,7 +26,13 @@
       "Bash(\"/g/Lua/lua54.exe\" -e \"print\\('path:'\\); print\\(package.path\\); print\\('cpath:'\\); print\\(package.cpath\\)\")",
       "mcp__MiniMax__web_search",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git commit -m 'chore: 更新 Claude/MCP 配置与 .gitignore *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m 'feat\\(sproto\\): 引入 sproto 协议定义与生成产物 *)",
+      "Bash(git commit -m 'feat\\(assets\\): 阶段性资源补齐 + 字体方案替换 + 渲染管线 *)",
+      "Bash(git commit -m 'refactor: Data/Item Manager 调整 + UI 子脚本演进 *)",
+      "Bash(git commit -m 'chore\\(claude\\): 记录本次会话期间 hook 自学习产生的 Bash 权限 *)"
     ],
     "additionalDirectories": [
       "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\Resources\\Prefab\\UI",
