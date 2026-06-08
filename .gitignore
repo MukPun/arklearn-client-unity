@@ -102,6 +102,9 @@ crashlytics-build.properties
 /[Aa]ssets/[Ii]mage/
 /[Aa]ssets/[Ii]mage.meta
 
+# SecureHandshake self-test 编译产物（.NET Framework 4 csc 生成）
+tests/SecureHandshakeTest/SecureHandshakeTest.exe
+
 # 任意子目录下的设计软件截图
 ScreenShot_*.png
 ScreenShot_*.png.meta
