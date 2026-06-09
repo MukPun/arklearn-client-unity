@@ -172,6 +172,42 @@ public class Program {
             AssertEqual(8, b.Length);
         });
 
+        // 真实 Play 失败对账: secret 不一致
+        // client 端算:   secret = DHSecret(serverPub, clientKey) = efa8bd2ac5884300 ^ 8e6aca03be09a587
+        // server 端算:   secret = crypt.dhsecret(clientkey, serverkey) = 41d4ce0499324d33 ^ 9e81da542b878370
+        // 数学保证:      两个 secret 应该 byte-byte 相等
+        // shim 实算:     client secret = a5b5ae2dd26e36ce (跟 server 9457f49289d83866 不等!)
+        //
+        // 如果下面这个测试 FAIL, shim 跟 skynet DH 算法在 pow_mod_p / mul_mod_p 上有 byte-level 偏差
+        // 如果 PASS, 那 client 算的是真的(说明 client 端算法对, 是其他环节被改)
+        Test("DHSecret regression: real Play values must match skynet 9457f49289d83866", () => {
+            byte[] clientKey = { 0x8e, 0x6a, 0xca, 0x03, 0xbe, 0x09, 0xa5, 0x87 };
+            byte[] serverPub = { 0xef, 0xa8, 0xbd, 0x2a, 0xc5, 0x88, 0x43, 0x00 };
+            byte[] clientSecret = SecureHandshake.DHSecret(serverPub, clientKey);
+            byte[] expected = { 0x94, 0x57, 0xf4, 0x92, 0x89, 0xd8, 0x38, 0x66 };
+            AssertEqualBytes(clientSecret, expected, "shim must byte-match skynet serverSecret");
+        });
+
+        // 进一步定位: shim DHExchange(clientKey) 算的 clientPub 应该等于 server 收的
+        // 如果这个 FAIL, shim 的 pow_mod_p 跟 skynet C 端 byte-level 偏差
+        // 如果 PASS, 那 DHExchange 算法对, 但 DHSecret 内部状态被改 (?)
+        Test("DHExchange regression: real Play clientKey must give clientPub 41d4ce0499324d33", () => {
+            byte[] clientKey = { 0x8e, 0x6a, 0xca, 0x03, 0xbe, 0x09, 0xa5, 0x87 };
+            byte[] clientPub = SecureHandshake.DHExchange(clientKey);
+            byte[] expected = { 0x41, 0xd4, 0xce, 0x04, 0x99, 0x32, 0x4d, 0x33 };
+            AssertEqualBytes(clientPub, expected, "shim DHExchange must match skynet dhexchange");
+        });
+
+        // 配套: 验 server 视角的 clientPub^serverKey 也得跟 serverSecret 一致
+        // 如果上面 fail 但这个 pass, 说明 shim 内部对称但 pow_mod_p 跟 skynet byte-level 偏差
+        Test("DHSecret regression: clientPub^serverKey must match skynet 9457f49289d83866", () => {
+            byte[] clientPub = { 0x41, 0xd4, 0xce, 0x04, 0x99, 0x32, 0x4d, 0x33 };
+            byte[] serverKey = { 0x9e, 0x81, 0xda, 0x54, 0x2b, 0x87, 0x83, 0x70 };
+            byte[] serverSecret = SecureHandshake.DHSecret(clientPub, serverKey);
+            byte[] expected = { 0x94, 0x57, 0xf4, 0x92, 0x89, 0xd8, 0x38, 0x66 };
+            AssertEqualBytes(serverSecret, expected, "shim must byte-match skynet serverSecret");
+        });
+
         // ===== INTEGRATION: 模拟完整 client/server 加密握手 =====
         Test("INTEGRATION: full handshake flow (mock server, no real skynet)", () => {
             byte[] serverKey = SecureHandshake.RandomKey();

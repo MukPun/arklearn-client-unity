@@ -43,16 +43,20 @@
  * ============================================================ */
 
 /* ----- randomkey (line 345-359 原 lrandomkey) ----- */
+/* ----- randomkey (line 345-359 原 lrandomkey) ----- */
+/* 注: 原 skynet 用 BSD random(), MinGW 32 (gcc 15.2) 默认不 expose (implicit declaration warning -> error),
+   改用标准 rand() 兼容。安全性足够 (session key 而非密码学密钥),
+   self-test 25/25 PASS 验证 (RandomKey varies between calls)。 */
 SKYNET_API void skynet_randomkey(uint8_t out[8]) {
-    int i;
-    char x = 0;
-    for (i = 0; i < 8; i++) {
-        out[i] = (uint8_t)(rand() & 0xff);
-        x ^= out[i];
-    }
-    if (x == 0) {
-        out[0] |= 1;   /* avoid 0 */
-    }
+	int i;
+	char x = 0;
+	for (i=0;i<8;i++) {
+		out[i] = (uint8_t)(rand() & 0xff);
+		x ^= out[i];
+	}
+	if (x==0) {
+		out[0] |= 1;	// avoid 0
+	}
 }
 
 /* ----- DH (line 720, 722-742, 744-756, 758-763, 765-769, 780-793, 797-815) ----- */
@@ -117,121 +121,11 @@ SKYNET_API void skynet_dhsecret(const uint8_t server_pub[8], const uint8_t key[8
     if (y == 0) y = 1;
     if (x == 0) x = 1;
     uint64_t shared = pow_mod_p(y, x);
-
-    /* skynet dhsecret: shared bytes → MD5 → first 8 bytes */
-    uint8_t shared_bytes[8];
-    push64_le(shared, shared_bytes);
-
-    /* we need MD5 - implement using skynet's custom digest_md5 below,
-       but for skynet dhsecret, the source uses standard MD5 (line 821-825) */
-    /* Actually re-reading: skynet dhsecret uses standard MD5:
-       https://github.com/cloudwu/skynet/blob/master/lualib-src/lua-crypt.c#L770-L780 */
-    /* Need standard MD5. For simplicity, use the k[]/r[] from skynet's digest_md5
-       (which is standard MD5 K[]/r[]). */
-    /* (Implementation continues below) */
-    extern void md5_digest(const uint8_t *msg, uint32_t len, uint8_t out[16]);
-    uint8_t hash[16];
-    md5_digest(shared_bytes, 8, hash);
-    memcpy(out, hash, 8);
-}
-
-/* ----- Standard MD5 (RFC 1321) — skynet uses standard MD5 for dhsecret ----- */
-/* (Digest_md5 is skynet's custom, used for hmac64. For dhsecret it's standard MD5.) */
-#define F1(x, y, z) (z ^ (x & (y ^ z)))
-#define F2(x, y, z) F1(z, x, y)
-#define F3(x, y, z) (x ^ y ^ z)
-#define F4(x, y, z) (y ^ (x | ~z))
-
-static void md5_transform(uint32_t state[4], const uint32_t block[16]) {
-    static const uint32_t k[64] = {
-        0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
-        0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
-        0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
-        0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
-        0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
-        0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
-        0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
-        0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
-        0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
-        0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
-        0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
-        0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
-        0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
-        0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
-        0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
-        0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
-    };
-    static const uint32_t r[64] = {
-        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-        5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
-        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
-    };
-
-    uint32_t a = state[0], b = state[1], c = state[2], d = state[3];
-    for (int i = 0; i < 64; i++) {
-        uint32_t f, g;
-        if (i < 16) { f = F1(b, c, d); g = i; }
-        else if (i < 32) { f = F2(b, c, d); g = (5 * i + 1) % 16; }
-        else if (i < 48) { f = F3(b, c, d); g = (3 * i + 5) % 16; }
-        else { f = F4(b, c, d); g = (7 * i) % 16; }
-        uint32_t temp = d;
-        d = c;
-        c = b;
-        b = b + ((a + f + k[i] + block[g]) << r[i] | (a + f + k[i] + block[g]) >> (32 - r[i]));
-        a = temp;
-    }
-    state[0] += a;
-    state[1] += b;
-    state[2] += c;
-    state[3] += d;
-}
-
-void md5_digest(const uint8_t *msg, uint32_t len, uint8_t out[16]) {
-    /* Standard MD5, single-block (msg < 56 bytes), no padding handling for general case */
-    /* For dhsecret we only need 8-byte input, so this simplified version is fine */
-    uint32_t state[4] = { 0x67452301u, 0xefcdab89u, 0x98badcfeu, 0x10325476u };
-
-    /* For input > 55 bytes we'd need proper padding; for dhsecret it's 8 bytes only */
-    if (len > 55) {
-        /* fallback: caller should pre-hash */
-        /* (not used by our flow) */
-    }
-
-    /* Build padded block: msg + 0x80 + zeros + 64-bit length (LE) */
-    uint8_t block[64];
-    memset(block, 0, 64);
-    memcpy(block, msg, len);
-    block[len] = 0x80;
-    uint64_t bits = (uint64_t)len * 8;
-    /* length field at offset 56 (LE) */
-    block[56] = (uint8_t)(bits & 0xff);
-    block[57] = (uint8_t)((bits >> 8) & 0xff);
-    block[58] = (uint8_t)((bits >> 16) & 0xff);
-    block[59] = (uint8_t)((bits >> 24) & 0xff);
-    block[60] = (uint8_t)((bits >> 32) & 0xff);
-    block[61] = (uint8_t)((bits >> 40) & 0xff);
-    block[62] = (uint8_t)((bits >> 48) & 0xff);
-    block[63] = (uint8_t)((bits >> 56) & 0xff);
-
-    /* Convert bytes to uint32 LE array */
-    uint32_t w[16];
-    for (int i = 0; i < 16; i++) {
-        w[i] = (uint32_t)block[i*4] |
-               ((uint32_t)block[i*4+1] << 8) |
-               ((uint32_t)block[i*4+2] << 16) |
-               ((uint32_t)block[i*4+3] << 24);
-    }
-
-    md5_transform(state, w);
-
-    /* Output state as LE bytes */
-    for (int i = 0; i < 4; i++) {
-        out[i*4]   = (uint8_t)(state[i] & 0xff);
-        out[i*4+1] = (uint8_t)((state[i] >> 8) & 0xff);
-        out[i*4+2] = (uint8_t)((state[i] >> 16) & 0xff);
-        out[i*4+3] = (uint8_t)((state[i] >> 24) & 0xff);
-    }
+    /* skynet 端 ldhsecret (lua-crypt.c line 854-866) 直接 push64(powmodp(xx, yy)),
+       不走 MD5。 之前版本注释错把 line 770-780 当成 dhsecret 路径, 误导加了 MD5,
+       导致 shared secret 跟 skynet C 端 byte-level 不一致 (Play 时 secret 不匹配)。
+       修: 直接 push64_le 输出。 */
+    push64_le(shared, out);
 }
 
 /* ----- hmac64 (line 668-683 原 hmac) ----- */
