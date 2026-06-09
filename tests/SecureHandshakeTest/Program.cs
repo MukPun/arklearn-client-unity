@@ -145,6 +145,33 @@ public class Program {
             AssertTrue(threw, "should throw FormatException on invalid base64");
         });
 
+        // Phase 1 真实 Play 时遇到的两个 server pub 例子
+        // 'qW0X60vFdsk=' 第一次成功, 'sFZs8WsAtO4=' 第二次失败
+        // 如果这俩都能解,问题在传输层(行截断/CRLF);如果 sFZs8WsAtO4= 失败, shim 有 bug
+        Test("Base64 decode skynet challenge (qW0X60vFdsk=) -> 8B", () => {
+            var b = SecureHandshake.Base64Decode("qW0X60vFdsk=");
+            AssertEqual(8, b.Length);
+        });
+        Test("Base64 decode skynet server pub (sFZs8WsAtO4=) -> 8B", () => {
+            var b = SecureHandshake.Base64Decode("sFZs8WsAtO4=");
+            AssertEqual(8, b.Length);
+        });
+        // Phase 1 第三次 Play 收到 'WMhjDV9/LQ4=' 同样 12 字符 1 '=', 但 Unity Play fail
+        // 同样 22/22 PASS + 12 字符格式一致 → Unity Console 印 {0} 隐藏了控制字符
+        // 兜底 trim 应该让 13 字符 'sFZs8WsAtO4=\n' 也能解
+        Test("Base64 decode trailing \\n trimmed (sFZs8WsAtO4=\\n) -> 8B", () => {
+            var b = SecureHandshake.Base64Decode("sFZs8WsAtO4=\n");
+            AssertEqual(8, b.Length);
+        });
+        Test("Base64 decode trailing \\r\\n trimmed (sFZs8WsAtO4=\\r\\n) -> 8B", () => {
+            var b = SecureHandshake.Base64Decode("sFZs8WsAtO4=\r\n");
+            AssertEqual(8, b.Length);
+        });
+        Test("Base64 decode trailing \\0 trimmed (sFZs8WsAtO4=\\0) -> 8B", () => {
+            var b = SecureHandshake.Base64Decode("sFZs8WsAtO4=\0");
+            AssertEqual(8, b.Length);
+        });
+
         // ===== INTEGRATION: 模拟完整 client/server 加密握手 =====
         Test("INTEGRATION: full handshake flow (mock server, no real skynet)", () => {
             byte[] serverKey = SecureHandshake.RandomKey();

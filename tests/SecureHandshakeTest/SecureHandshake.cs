@@ -107,6 +107,13 @@ namespace Manager {
         /// <summary>对应 skynet crypt.base64decode(s), 标准 base64 字节。</summary>
         public static byte[] Base64Decode(string s) {
             if (string.IsNullOrEmpty(s)) return new byte[0];
+            // 防御性 trim 末尾所有控制字符 + 空格 (\r \n \t \0 ' ' 等)。
+            // LoginReadLine 已经 trim 过, 但作为 P/Invoke 入口再兜底一次:
+            // 1) 防止 LoginReadLine 后续被改时漏 trim
+            // 2) 自测时 hardcoded "..." 不会被影响
+            // 3) C 端 skynet_b64decode 对 trailing \n 敏感 (12 chars + \n 走 default return -1)
+            s = s.TrimEnd('\r', '\n', ' ', '\t', '\0');
+            if (s.Length == 0) return new byte[0];
             byte[] ascii = Encoding.ASCII.GetBytes(s);
             int maxOut = (ascii.Length + 3) / 4 * 3;
             var buf = new byte[maxOut + 4];
