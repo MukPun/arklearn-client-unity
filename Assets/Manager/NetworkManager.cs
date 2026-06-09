@@ -266,6 +266,7 @@ namespace Manager {
             byte[] secret;
             try {
                 secret = SecureHandshake.DHSecret(serverPub, _clientKey);
+                Debug.LogError("secret = " + BitConverter.ToString(secret).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginWaitServerPub, $"dhsecret failed: {e.Message}");
                 return;
@@ -280,6 +281,7 @@ namespace Manager {
             byte[] hmac;
             try {
                 hmac = SecureHandshake.Hmac64(_loginChallenge, _loginSecret);
+                Debug.LogError("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginVerifyHmac, $"hmac64 failed: {e.Message}");
                 return;
