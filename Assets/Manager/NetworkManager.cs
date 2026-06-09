@@ -207,8 +207,10 @@ namespace Manager {
 
         private void OnLoginChallenge(string line) {
             byte[] challenge;
+            Debug.LogError("in OnLoginChallenge");
             try {
                 challenge = SecureHandshake.Base64Decode(line);
+                
             } catch (Exception e) {
                 Fail(Stage.LoginWaitChallenge, $"decode challenge failed: {e.Message}");
                 return;

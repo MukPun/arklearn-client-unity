@@ -134,6 +134,17 @@ public class Program {
             AssertEqual(0, SecureHandshake.Base64Decode("").Length);
         });
 
+        // Regression: 修复前 C 端 skynet_b64decode 返回 -1, C# wrapper 拿 -1
+        // 去 new byte[-1] 抛 OverflowException (message 跟 base64 错不相关,
+        // 排查困难, Play 时会看到 "decode challenge failed: " message 为空)
+        // 修后应抛 FormatException 带原 input
+        Test("Base64 invalid input throws FormatException (regression)", () => {
+            bool threw = false;
+            try { SecureHandshake.Base64Decode("abcde"); }   // 5 chars, 不是 4 倍数, 触发 padding 错
+            catch (FormatException) { threw = true; }
+            AssertTrue(threw, "should throw FormatException on invalid base64");
+        });
+
         // ===== INTEGRATION: 模拟完整 client/server 加密握手 =====
         Test("INTEGRATION: full handshake flow (mock server, no real skynet)", () => {
             byte[] serverKey = SecureHandshake.RandomKey();

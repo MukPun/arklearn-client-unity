@@ -111,6 +111,10 @@ namespace Manager {
             int maxOut = (ascii.Length + 3) / 4 * 3;
             var buf = new byte[maxOut + 4];
             int written = SkynetB64Decode(ascii, buf, buf.Length);
+            // C 端 skynet_b64decode 解析失败时返回 -1,不能直接 new byte[-1]
+            // (会抛 OverflowException, message 跟 base64 错不相关, 排查困难)
+            if (written < 0)
+                throw new FormatException(string.Format("invalid base64 input: '{0}'", s));
             var result = new byte[written];
             Buffer.BlockCopy(buf, 0, result, 0, written);
             return result;
