@@ -9,8 +9,8 @@ namespace Scripts.Debug {
     /// 真实 LoginUI 接入网络后可删除本文件。
     /// </summary>
     public class NetworkTestUI : MonoBehaviour {
-        private string _user = "dev01";
-        private string _pwd  = "123456";
+        private string _user = "test11";
+        private string _pwd  = "test123";
         private bool   _show = true;
         private string _log  = "";
 

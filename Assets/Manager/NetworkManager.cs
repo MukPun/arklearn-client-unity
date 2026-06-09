@@ -207,10 +207,8 @@ namespace Manager {
 
         private void OnLoginChallenge(string line) {
             byte[] challenge;
-            Debug.LogError("in OnLoginChallenge");
             try {
                 challenge = SecureHandshake.Base64Decode(line);
-                
             } catch (Exception e) {
                 Fail(Stage.LoginWaitChallenge, $"decode challenge failed: {e.Message}");
                 return;
@@ -230,6 +228,7 @@ namespace Manager {
             byte[] clientPub;
             try {
                 clientPub = SecureHandshake.DHExchange(_clientKey);
+                Debug.Log("clientPub = " + BitConverter.ToString(clientPub).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginDHExchange, $"dhexchange failed: {e.Message}");
                 return;
@@ -268,7 +267,7 @@ namespace Manager {
             byte[] secret;
             try {
                 secret = SecureHandshake.DHSecret(serverPub, _clientKey);
-                Debug.LogError("secret = " + BitConverter.ToString(secret).Replace("-", "").ToLowerInvariant());
+                Debug.Log("secret = " + BitConverter.ToString(secret).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginWaitServerPub, $"dhsecret failed: {e.Message}");
                 return;
@@ -283,7 +282,7 @@ namespace Manager {
             byte[] hmac;
             try {
                 hmac = SecureHandshake.Hmac64(_loginChallenge, _loginSecret);
-                Debug.LogError("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
+                Debug.Log("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginVerifyHmac, $"hmac64 failed: {e.Message}");
                 return;
