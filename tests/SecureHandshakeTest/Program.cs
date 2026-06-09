@@ -57,11 +57,12 @@ public class Program {
             }
         });
 
-        Test("DHExchange throws on all-zero input", () => {
-            bool threw = false;
-            try { SecureHandshake.DHExchange(new byte[8]); }
-            catch (ArgumentException) { threw = true; }
-            AssertTrue(threw, "should throw on all-zero key");
+        // 注: skynet 端 dhsecret 在 server_pub=0 或 key=0 时 silently fix 0→1, 不 throw。
+        // 我们的 P/Invoke shim 跟 skynet 对齐, 也 silently fix, 不 throw (见 skynet_crypt_shim.c line 109/116-118)。
+        // 所以此处不验 throw, 改为验 all-zero 时不 crash 且输出 8 字节 (行为与 skynet 一致)。
+        Test("DHExchange silently handles all-zero input (skynet-compatible)", () => {
+            var pub = SecureHandshake.DHExchange(new byte[8]);
+            AssertEqual(8, pub.Length);
         });
 
         // ===== Hmac64 (skynet 自定义) =====
