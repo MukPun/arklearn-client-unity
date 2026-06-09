@@ -196,7 +196,7 @@ namespace Manager {
 
             ChangeStage(Stage.LoginWaitChallenge);
             StartWatchdog(Stage.LoginWaitChallenge,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
 
             // skynet 流程：server 先发一行 base64(challenge)（8 字节）
             StartCoroutine(CoReadLineAndThen(_loginStream, line => {
@@ -222,7 +222,7 @@ namespace Manager {
             // 推进到 LoginDHExchange：本帧内同步生成 key + 发送 clientPub
             ChangeStage(Stage.LoginDHExchange);
             StartWatchdog(Stage.LoginDHExchange,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
 
             _clientKey = SecureHandshake.RandomKey();
             byte[] clientPub;
@@ -242,7 +242,7 @@ namespace Manager {
             // 等待 server DH 公钥
             ChangeStage(Stage.LoginWaitServerPub);
             StartWatchdog(Stage.LoginWaitServerPub,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
             StartCoroutine(CoReadLineAndThen(_loginStream, line => {
                 if (CurrentStage != Stage.LoginWaitServerPub) return;
                 OnLoginServerPub(line);
@@ -275,7 +275,7 @@ namespace Manager {
             // 进入 hmac 阶段：计算 hmac64(challenge, secret) 并发送
             ChangeStage(Stage.LoginVerifyHmac);
             StartWatchdog(Stage.LoginVerifyHmac,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
 
             byte[] hmac;
             try {
@@ -294,7 +294,7 @@ namespace Manager {
             // 进入 token 阶段：encode_token + DES + base64
             ChangeStage(Stage.LoginSendToken);
             StartWatchdog(Stage.LoginSendToken,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
 
             string etoken;
             try {
@@ -316,7 +316,7 @@ namespace Manager {
             // 等待 server 返回 "200 <subid-base64>"
             ChangeStage(Stage.LoginParseResponse);
             StartWatchdog(Stage.LoginParseResponse,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
             StartCoroutine(CoReadLineAndThen(_loginStream, line => {
                 if (CurrentStage != Stage.LoginParseResponse) return;
                 OnLoginParseResponse(line);
@@ -385,7 +385,7 @@ namespace Manager {
             if (CurrentStage != Stage.GameConnecting) return;
             ChangeStage(Stage.GameHandshaking);
             StartWatchdog(Stage.GameHandshaking,
-                GameSettings.NET_RPC_TIMEOUT_SEC));
+                GameSettings.NET_RPC_TIMEOUT_SEC);
 
             // 当前 game.sproto 未生成 handshake.request 类，握手包本身无 payload。
             // server 按 protocol.tag 识别后回 handshake.response {msg}。
