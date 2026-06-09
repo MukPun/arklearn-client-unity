@@ -32,11 +32,11 @@ namespace Settings {
 
         // ====== 网络 ======
         // 账号中心（登录服）
-        public const string LOGIN_HOST = "127.0.0.1";
+        public const string LOGIN_HOST = "8.134.122.158";
         public const int    LOGIN_PORT = 8001;          // skynet login server 默认监听端口
 
         // 游戏服默认值（开发期）；运行时若 login 响应里带了 server 字段则覆盖
-        public const string GAME_HOST  = "127.0.0.1";
+        public const string GAME_HOST  = "8.134.122.158";
         public const int    GAME_PORT  = 8888;          // skynet game server (watchdog) 默认监听端口
 
         // TCP 建链超时（毫秒）。NetCore 内部硬编码 3000，这里集中化方便以后改
