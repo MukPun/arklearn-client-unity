@@ -68,7 +68,7 @@ namespace Manager {
         // BeginLogin 携带的账号信息（用于 Phase 1 token 编码）
         private string _loginUser;
         private string _loginPassword;
-        private string _loginServer = "default";   // 固定为 default（暂不开放选服）
+        private string _loginServer = "10001";   // 固定为 10001（暂不开放选服）
 
         // 心跳计时器
         private float _heartbeatTimer;
@@ -333,7 +333,6 @@ namespace Manager {
                 Fail(Stage.LoginParseResponse, $"login rejected: '{line}'");
                 return;
             }
-
             string subidB64 = line.Substring(4);  // 跳过 "200 "
             byte[] subidBytes;
             try {
@@ -342,11 +341,20 @@ namespace Manager {
                 Fail(Stage.LoginParseResponse, $"decode subid failed: {e.Message}");
                 return;
             }
-            if (subidBytes == null || subidBytes.Length != 8) {
+            // 兼容两种 server 响应:
+            // 1) 8 字节 subid (skynet 标准, 来自 server 内 subid = integer)
+            // 2) 1 字节 err 占位 (简化 server, 用 "200 "..base64encode(err).."\n" 表示成功,
+            //    err 暂时是 1 字节 0x01, 协议设计正式后改成 8 字节)
+            //    把 1 字节当 long subid (高 7 字节 0, 低 1 字节 = err) 推进流程
+            long subid;
+            if (subidBytes != null && subidBytes.Length == 8) {
+                subid = BitConverter.ToInt64(subidBytes, 0);
+            } else if (subidBytes != null && subidBytes.Length == 1) {
+                subid = subidBytes[0];
+            } else {
                 Fail(Stage.LoginParseResponse, $"bad subid length {subidBytes?.Length ?? 0}");
                 return;
             }
-            long subid = BitConverter.ToInt64(subidBytes, 0);
 
             // login 服响应成功：关闭 login socket、缓存 session、转入 game
             long uid = 0;   // login 服目前未下发 uid；进入 game 后由 handshake 拿

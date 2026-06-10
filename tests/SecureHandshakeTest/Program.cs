@@ -208,6 +208,14 @@ public class Program {
             AssertEqualBytes(serverSecret, expected, "shim must byte-match skynet serverSecret");
         });
 
+        // LoginParseResponse 实际收到的 1 字节 subid (server 用 err=1 占位)
+        // 'MQ==' 4 字符 case 2 → 1 字节 = 0x31
+        Test("Base64 decode 1B input (MQ==) -> 1B", () => {
+            var b = SecureHandshake.Base64Decode("MQ==");
+            AssertEqual(1, b.Length);
+            AssertEqual(0x31, b[0]);
+        });
+
         // ===== INTEGRATION: 模拟完整 client/server 加密握手 =====
         Test("INTEGRATION: full handshake flow (mock server, no real skynet)", () => {
             byte[] serverKey = SecureHandshake.RandomKey();
