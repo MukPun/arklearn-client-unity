@@ -29,4 +29,13 @@ if %ERRORLEVEL% NEQ 0 (
 echo BUILD OK: %OUT_DLL%
 dir "%OUT_DLL%"
 
+REM 清理冗余的旧 build 路径 (lib/x86_64/), 跟 Plugins\x86_64\ 同 dll 会触发
+REM Unity Editor 报 "Multiple plugins with the same name"。此 bat 现已只输出
+REM 到 OUT_DIR = ..\x86_64\, lib/ 是历史 build 路径产物, 删之不损功能。
+if exist "%~dp0lib" (
+    echo Cleaning up old build path: %~dp0lib
+    rmdir /s /q "%~dp0lib"
+)
+if exist "%~dp0lib.meta" del /q "%~dp0lib.meta"
+
 endlocal
