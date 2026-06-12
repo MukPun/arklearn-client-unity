@@ -15,7 +15,7 @@ namespace Manager {
     /// <summary>
     /// skynet 双服客户端编排：login 加密握手 → game sproto 握手 → 业务 RPC。
     ///
-    /// 阶段划分（16 阶段）：
+    /// 阶段划分（14 阶段）：
     ///   Phase 1 — 走 skynet 自定义文本加密协议（独立 TcpClient，与 NetCore 解耦）：
     ///     Idle → LoginTcpConnecting → LoginWaitChallenge → LoginDHExchange
     ///     → LoginWaitServerPub → LoginVerifyHmac → LoginSendToken
@@ -393,7 +393,7 @@ namespace Manager {
             }
             // login 服响应成功：关闭 login socket、缓存 session、转入 game
             long uid = 0;   // login 服目前未下发 uid；进入 game 后由 handshake 拿
-            string secret = Convert.ToBase64String(_loginSecret);
+            byte[] secret = _loginSecret;
             CloseLoginSocket();
 
             // 缓存 subid, 后续 game 服文本握手要用 (OnGameSocketConnected 里)
@@ -431,28 +431,28 @@ namespace Manager {
         // =====================================================================
 
         private void OnGameSocketConnected() {
-            // ★ 改动: 阶段守卫改用 LoginGameHandshaking (不走 GameHandshaking)
             if (CurrentStage != Stage.LoginGameHandshaking) return;
 
             // === 1. 构造 skynet gateserver 文本握手字符串 ===
             //    格式: base64(user)@base64(server)#base64(subid):1
             //    index = 1 (跟官方 Lua 参考一致, skynet 协议默认)
+            string index = "1";
             string userB64   = CallLuaFunc<string>("Base64Encode", _loginUser);
             string serverB64 = CallLuaFunc<string>("Base64Encode", _loginServer);
             string subidB64  = CallLuaFunc<string>("Base64Encode", _loginSubid);
-            string handshake = $"{userB64}@{serverB64}#{subidB64}:1";
+            string handshake = $"{userB64}@{serverB64}#{subidB64}:{index}";
             Debug.Log($"[Net] game auth handshake = {handshake}");
 
             // === 2. hmac = hmac64(hashkey(handshake), secret) ===
             //    跟官方 Lua 参考一致: 走 Lua crypt 模块 (xlua 内置的 luaopen_skynet_crypt)
             byte[] hash = CallLuaFunc<byte[]>("HashKey", handshake);
-            byte[] secretBytes = Convert.FromBase64String(SessionInfo.Inst().Secret);
+            byte[] secretBytes = SessionInfo.Inst().Secret;
             byte[] hmac = CallLuaFunc<byte[]>("Hmac64", hash, secretBytes);
             Debug.Log("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
 
             // === 3. 拼 final payload: handshake + ":" + base64(hmac) + "\n" ===
             string hmacB64 = CallLuaFunc<string>("Base64Encode", hmac);
-            string payload = handshake + ":" + hmacB64 + "\n";
+            string payload = handshake + ":" + hmacB64;
             byte[] payloadBytes = Encoding.ASCII.GetBytes(payload);
 
             // === 4. 通过 NetCore raw 通道发出 (不走 sproto pack) ===
