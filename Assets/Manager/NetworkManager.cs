@@ -15,13 +15,13 @@ namespace Manager {
     /// <summary>
     /// skynet 双服客户端编排：login 加密握手 → game sproto 握手 → 业务 RPC。
     ///
-    /// 阶段划分（15 个 Stage）：
+    /// 阶段划分（16 阶段）：
     ///   Phase 1 — 走 skynet 自定义文本加密协议（独立 TcpClient，与 NetCore 解耦）：
     ///     Idle → LoginTcpConnecting → LoginWaitChallenge → LoginDHExchange
     ///     → LoginWaitServerPub → LoginVerifyHmac → LoginSendToken
-    ///     → LoginParseResponse → SwitchingToGame
+    ///     → LoginParseResponse → SwitchingToGame → LoginGameHandshaking
     ///   Phase 2 — 走 sproto（用 NetCore 静态层）：
-    ///     SwitchingToGame → GameConnecting → GameHandshaking → Online
+    ///     LoginGameHandshaking → GameConnecting → GameHandshaking → Online
     ///   终态：Disconnected（等待 BeginLogin 重置）。
     ///
     /// 静态层 NetCore 由本类驱动（Update 调 Dispatch），状态机持有阶段。
@@ -44,6 +44,7 @@ namespace Manager {
 
             // Phase 切换
             SwitchingToGame,         // 关闭 login socket、NetCore.ResetState、准备连 game
+            LoginGameHandshaking,    // skynet gateserver 文本握手 (raw 通道, 1 次响应即切 sproto)
 
             // Phase 2：sproto 握手（用 NetCore）
             GameConnecting,
@@ -65,6 +66,9 @@ namespace Manager {
         private byte[] _clientKey;        // 8B 客户端 DH 私钥
         private byte[] _loginChallenge;   // 8B server challenge
         private byte[] _loginSecret;      // 8B 共享 secret
+
+        // 从 login response 缓存的 subid, 给 game 服文本握手用 (不要每次都从 SessionInfo 取)
+        private string _loginSubid;
 
         // BeginLogin 携带的账号信息（用于 Phase 1 token 编码）
         private string _loginUser;
@@ -392,6 +396,9 @@ namespace Manager {
             string secret = Convert.ToBase64String(_loginSecret);
             CloseLoginSocket();
 
+            // 缓存 subid, 后续 game 服文本握手要用 (OnGameSocketConnected 里)
+            _loginSubid = subid;
+
             SessionInfo.Inst().SaveLoginResponse(
                 uid, subid,
                 GameSettings.GAME_HOST, GameSettings.GAME_PORT,
@@ -409,8 +416,9 @@ namespace Manager {
             ChangeStage(Stage.SwitchingToGame);
             NetCore.Disconnect();
             NetCore.ResetState();          // ⭐ 关键 — 不调用=切服污染，参考设计书 §2.3
-            ChangeStage(Stage.GameConnecting);
-            StartWatchdog(Stage.GameConnecting, 3.5f);
+            // ★ 改动: 推进到 LoginGameHandshaking (skynet 文本握手) 而非 GameConnecting
+            ChangeStage(Stage.LoginGameHandshaking);
+            StartWatchdog(Stage.LoginGameHandshaking, 3.5f);
 
             var s = SessionInfo.Inst();
             string host = !string.IsNullOrEmpty(s.GameHost) ? s.GameHost : GameSettings.GAME_HOST;
@@ -423,16 +431,54 @@ namespace Manager {
         // =====================================================================
 
         private void OnGameSocketConnected() {
-            // 防御性 stage guard：防双回调
-            if (CurrentStage != Stage.GameConnecting) return;
-            ChangeStage(Stage.GameHandshaking);
-            StartWatchdog(Stage.GameHandshaking,
-                GameSettings.NET_RPC_TIMEOUT_SEC);
+            // ★ 改动: 阶段守卫改用 LoginGameHandshaking (不走 GameHandshaking)
+            if (CurrentStage != Stage.LoginGameHandshaking) return;
 
-            // 当前 game.sproto 未生成 handshake.request 类，握手包本身无 payload。
-            // server 按 protocol.tag 识别后回 handshake.response {msg}。
-            // 字段名（如未来要带 subid/secret）需要按真实 sproto 调整。
-            NetSender.Send<Protocol.handshake>();
+            // === 1. 构造 skynet gateserver 文本握手字符串 ===
+            //    格式: base64(user)@base64(server)#base64(subid):1
+            //    index = 1 (跟官方 Lua 参考一致, skynet 协议默认)
+            string userB64   = CallLuaFunc<string>("Base64Encode", _loginUser);
+            string serverB64 = CallLuaFunc<string>("Base64Encode", _loginServer);
+            string subidB64  = CallLuaFunc<string>("Base64Encode", _loginSubid);
+            string handshake = $"{userB64}@{serverB64}#{subidB64}:1";
+            Debug.Log($"[Net] game auth handshake = {handshake}");
+
+            // === 2. hmac = hmac64(hashkey(handshake), secret) ===
+            //    跟官方 Lua 参考一致: 走 Lua crypt 模块 (xlua 内置的 luaopen_skynet_crypt)
+            byte[] hash = CallLuaFunc<byte[]>("HashKey", handshake);
+            byte[] secretBytes = Convert.FromBase64String(SessionInfo.Inst().Secret);
+            byte[] hmac = CallLuaFunc<byte[]>("Hmac64", hash, secretBytes);
+            Debug.Log("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
+
+            // === 3. 拼 final payload: handshake + ":" + base64(hmac) + "\n" ===
+            string hmacB64 = CallLuaFunc<string>("Base64Encode", hmac);
+            string payload = handshake + ":" + hmacB64 + "\n";
+            byte[] payloadBytes = Encoding.ASCII.GetBytes(payload);
+
+            // === 4. 通过 NetCore raw 通道发出 (不走 sproto pack) ===
+            NetCore.SendRaw(payloadBytes);
+            // 注册 raw 响应 handler, 收到 200 OK 后切到 sproto 握手
+            NetCore.SetRawHandler(OnGameAuthRawResponse);
+        }
+
+        /// <summary>
+        /// skynet gateserver 文本握手的 raw 响应回调 (NetCore.SetRawHandler 注册).
+        /// server 回 "200 OK\n" 表示 HMAC 校验通过, 之后切 sproto.
+        /// </summary>
+        private void OnGameAuthRawResponse(byte[] data) {
+            // 防御性 stage guard
+            if (CurrentStage != Stage.LoginGameHandshaking) return;
+
+            string response = Encoding.ASCII.GetString(data).Trim();
+            if (!response.StartsWith("200")) {
+                Fail(Stage.LoginGameHandshaking, $"game auth rejected: '{response}'");
+                return;
+            }
+
+            // 200 OK -> 切到现有 sproto 握手阶段
+            ChangeStage(Stage.GameHandshaking);
+            StartWatchdog(Stage.GameHandshaking, GameSettings.NET_RPC_TIMEOUT_SEC);
+            NetSender.Send<Protocol.handshake>();   // 现有 sproto 握手, 不动
         }
 
         private SprotoTypeBase OnGameHandshakeResponseHandler(SprotoTypeBase raw) {
