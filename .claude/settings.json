@@ -79,13 +79,15 @@
       "Bash(awk '/public enum Stage/,/^        }/' Assets/Manager/NetworkManager.cs)",
       "Bash(git rev-list *)",
       "Bash(git push *)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(python -c ' *)"
     ],
     "additionalDirectories": [
       "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\Resources\\Prefab\\UI",
       "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets\\UI",
       "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\Assets",
-      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\tests"
+      "i:\\Sofware\\Unity\\MukPun\\ArknightsLearn\\tests",
+      "G:\\工作文档\\面试\\面试\\Skynet"
     ]
   }
 }

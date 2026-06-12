@@ -8,7 +8,7 @@ namespace Data.Player {
     /// </summary>
     public class SessionInfo : Single<SessionInfo> {
         public long   Uid       { get; private set; }
-        public long   SubId     { get; private set; }
+        public string   SubId     { get; private set; }
         public string Secret    { get; private set; }
         public string GameHost  { get; private set; }
         public int    GamePort  { get; private set; }
@@ -16,7 +16,7 @@ namespace Data.Player {
         // Secret 作为「已登录」的判定信号；其他字段是辅助载荷
         public bool   HasSession => !string.IsNullOrEmpty(Secret);
 
-        public void SaveLoginResponse(long uid, long subid,
+        public void SaveLoginResponse(long uid, string subid,
                                        string gameHost, int gamePort,
                                        string secret) {
             Uid = uid; SubId = subid;
@@ -25,7 +25,7 @@ namespace Data.Player {
         }
 
         public void Clear() {
-            Uid = 0; SubId = 0;
+            Uid = 0; SubId = null;
             Secret = null;
             GameHost = null; GamePort = 0;
         }

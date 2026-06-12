@@ -9,6 +9,7 @@ using Sproto;
 using SprotoType;
 using Tools;
 using UnityEngine;
+using XLua;
 
 namespace Manager {
     /// <summary>
@@ -81,6 +82,10 @@ namespace Manager {
         // Fail 入口幂等保护,避免 watchdog / 多重回调重复触发 OnFailed 给订阅者
         private bool _failureFired;
 
+        // Lua相关
+        private LuaEnv _luaEnv;
+        private LuaTable _cryptModule;
+
         // ===== 生命周期 =====
         protected override void Initialization() {
             NetCore.Init();
@@ -93,13 +98,55 @@ namespace Manager {
             // 所以 Phase 2 的握手包本身无 payload，server 端按 protocol.tag 识别即可。
             // 字段名（如未来要带 subid/secret）需要按真实 sproto 调整。
             NetReceiver.AddHandler<Protocol.handshake>(OnGameHandshakeResponseHandler);
+
+            // 1. Lua虚拟机初始化
+            _luaEnv = new LuaEnv();
+            _luaEnv.AddBuildin("crypt", XLua.LuaDLL.Lua.LoadCrypt);
+            _luaEnv.AddLoader(XLuaFolderLoader);
+
+            // 2. 加载自定义Lua脚本
+            object[] ret = _luaEnv.DoString("return require 'XLua.Lua.crypt_test'");
+            _cryptModule = (ret != null && ret.Length > 0) ? ret[0] as LuaTable : null;
+            if (_cryptModule == null) {
+                Debug.LogError("[Net] Failed to load Lua module 'XLua.Lua.crypt_test'");
+            }
         }
 
         private void Update() {
             NetCore.Dispatch();
             DetectOnlineDisconnect();
             TickHeartbeat();
+            _luaEnv?.Tick();
         }
+
+        private T CallLuaFunc<T>(string funcName, params object[] args) where T : class
+        {
+            LuaFunction func = _cryptModule?.Get<LuaFunction>(funcName);
+            if (func == null)
+            {
+                Debug.LogError($"找不到Lua函数：{funcName}");
+                return null;
+            }
+            try {
+                object[] ret;
+                if (typeof(T) == typeof(byte[])) {
+                    ret = func.Call(args, new Type[] { typeof(byte[]) });
+                } else {
+                    ret = func.Call(args);
+                }
+                return (ret != null && ret.Length > 0) ? ret[0] as T : null;
+            } finally {
+                func.Dispose(); // 及时释放函数引用,防内存泄漏
+            }
+        }
+
+        private static byte[] XLuaFolderLoader(ref string filepath) {
+            // Lua 路径分隔符 '.' 转系统路径分隔符 '/';同时改写 filepath 让 XLua 报错时能打印最终路径
+            filepath = filepath.Replace(".", "/") + ".lua";
+            string absPath = Path.Combine(Application.dataPath, filepath);
+            return !File.Exists(absPath) ? null : Encoding.UTF8.GetBytes(File.ReadAllText(absPath));
+        }
+
 
         private void OnApplicationQuit() {
             CloseLoginSocket();
@@ -205,10 +252,10 @@ namespace Manager {
             }));
         }
 
-        private void OnLoginChallenge(string line) {
+        private void OnLoginChallenge(byte[] line) {
             byte[] challenge;
             try {
-                challenge = SecureHandshake.Base64Decode(line);
+                challenge = CallLuaFunc<byte[]>("Base64Decode", line);
             } catch (Exception e) {
                 Fail(Stage.LoginWaitChallenge, $"decode challenge failed: {e.Message}");
                 return;
@@ -218,23 +265,21 @@ namespace Manager {
                 return;
             }
             _loginChallenge = challenge;
-
             // 推进到 LoginDHExchange：本帧内同步生成 key + 发送 clientPub
             ChangeStage(Stage.LoginDHExchange);
             StartWatchdog(Stage.LoginDHExchange,
                 GameSettings.NET_RPC_TIMEOUT_SEC);
 
-            _clientKey = SecureHandshake.RandomKey();
+            _clientKey = CallLuaFunc<byte[]>("RandomKey");
             byte[] clientPub;
             try {
-                clientPub = SecureHandshake.DHExchange(_clientKey);
-                Debug.Log("clientPub = " + BitConverter.ToString(clientPub).Replace("-", "").ToLowerInvariant());
+                clientPub = CallLuaFunc<byte[]>("DhExchange", _clientKey);
             } catch (Exception e) {
                 Fail(Stage.LoginDHExchange, $"dhexchange failed: {e.Message}");
                 return;
             }
 
-            string clientPubLine = SecureHandshake.Base64Encode(clientPub) + "\n";
+            string clientPubLine = CallLuaFunc<string>("Base64Encode", clientPub) + "\n";
             if (!WriteLine(_loginStream, clientPubLine, GameSettings.NET_CONNECT_TIMEOUT_MS)) {
                 Fail(Stage.LoginDHExchange, "write client pub failed");
                 return;
@@ -246,14 +291,14 @@ namespace Manager {
                 GameSettings.NET_RPC_TIMEOUT_SEC);
             StartCoroutine(CoReadLineAndThen(_loginStream, line => {
                 if (CurrentStage != Stage.LoginWaitServerPub) return;
-                OnLoginServerPub(line);
+                OnLoginServerPub(Encoding.ASCII.GetString(line));
             }));
         }
 
         private void OnLoginServerPub(string line) {
             byte[] serverPub;
             try {
-                serverPub = SecureHandshake.Base64Decode(line);
+                serverPub = CallLuaFunc<byte[]>("Base64Decode", line);
             } catch (Exception e) {
                 Fail(Stage.LoginWaitServerPub, $"decode server pub failed: {e.Message}");
                 return;
@@ -266,7 +311,7 @@ namespace Manager {
             // 算共享 secret
             byte[] secret;
             try {
-                secret = SecureHandshake.DHSecret(serverPub, _clientKey);
+                secret = CallLuaFunc<byte[]>("DhSecret", serverPub, _clientKey);
                 Debug.Log("secret = " + BitConverter.ToString(secret).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginWaitServerPub, $"dhsecret failed: {e.Message}");
@@ -281,14 +326,14 @@ namespace Manager {
 
             byte[] hmac;
             try {
-                hmac = SecureHandshake.Hmac64(_loginChallenge, _loginSecret);
+                hmac = CallLuaFunc<byte[]>("Hmac64", _loginChallenge, _loginSecret);
                 Debug.Log("hmac = " + BitConverter.ToString(hmac).Replace("-", "").ToLowerInvariant());
             } catch (Exception e) {
                 Fail(Stage.LoginVerifyHmac, $"hmac64 failed: {e.Message}");
                 return;
             }
 
-            string hmacLine = SecureHandshake.Base64Encode(hmac) + "\n";
+            string hmacLine = CallLuaFunc<string>("Base64Encode", hmac) + "\n";
             if (!WriteLine(_loginStream, hmacLine, GameSettings.NET_CONNECT_TIMEOUT_MS)) {
                 Fail(Stage.LoginVerifyHmac, "write hmac failed");
                 return;
@@ -302,9 +347,9 @@ namespace Manager {
             string etoken;
             try {
                 string tokenPlain = EncodeToken(_loginUser, _loginServer, _loginPassword);
-                byte[] tokenBytes = SecureHandshake.DesEncode(
-                    Encoding.UTF8.GetBytes(tokenPlain), _loginSecret);
-                etoken = SecureHandshake.Base64Encode(tokenBytes);
+                byte[] tokenBytes = CallLuaFunc<byte[]>("DesEncode", _loginSecret,
+                    tokenPlain);
+                etoken = CallLuaFunc<string>("Base64Encode", tokenBytes);
             } catch (Exception e) {
                 Fail(Stage.LoginSendToken, $"encode token failed: {e.Message}");
                 return;
@@ -322,7 +367,7 @@ namespace Manager {
                 GameSettings.NET_RPC_TIMEOUT_SEC);
             StartCoroutine(CoReadLineAndThen(_loginStream, line => {
                 if (CurrentStage != Stage.LoginParseResponse) return;
-                OnLoginParseResponse(line);
+                OnLoginParseResponse(Encoding.ASCII.GetString(line));
             }));
         }
 
@@ -333,29 +378,15 @@ namespace Manager {
                 Fail(Stage.LoginParseResponse, $"login rejected: '{line}'");
                 return;
             }
-            string subidB64 = line.Substring(4);  // 跳过 "200 "
-            byte[] subidBytes;
+            string subidB64 = line.Substring(4);  // 跳过 "200 " 获取后面的 subid
+            string subid;
             try {
-                subidBytes = SecureHandshake.Base64Decode(subidB64);
+                subid = CallLuaFunc<string>("Base64Decode", subidB64);
+                Debug.Log("subid = " + subid);
             } catch (Exception e) {
                 Fail(Stage.LoginParseResponse, $"decode subid failed: {e.Message}");
                 return;
             }
-            // 兼容两种 server 响应:
-            // 1) 8 字节 subid (skynet 标准, 来自 server 内 subid = integer)
-            // 2) 1 字节 err 占位 (简化 server, 用 "200 "..base64encode(err).."\n" 表示成功,
-            //    err 暂时是 1 字节 0x01, 协议设计正式后改成 8 字节)
-            //    把 1 字节当 long subid (高 7 字节 0, 低 1 字节 = err) 推进流程
-            long subid;
-            if (subidBytes != null && subidBytes.Length == 8) {
-                subid = BitConverter.ToInt64(subidBytes, 0);
-            } else if (subidBytes != null && subidBytes.Length == 1) {
-                subid = subidBytes[0];
-            } else {
-                Fail(Stage.LoginParseResponse, $"bad subid length {subidBytes?.Length ?? 0}");
-                return;
-            }
-
             // login 服响应成功：关闭 login socket、缓存 session、转入 game
             long uid = 0;   // login 服目前未下发 uid；进入 game 后由 handshake 拿
             string secret = Convert.ToBase64String(_loginSecret);
@@ -478,7 +509,7 @@ namespace Manager {
         // NetworkStream.Read 是阻塞调用,但 Unity 主线程跑在协程里,
         // 此处用 deadline 手动控制超时,避免永久阻塞游戏循环。
         // 超时 / 远端关闭都返回 null,由调用方判空后 Fail。
-        private static string LoginReadLine(NetworkStream stream, int timeoutMs) {
+        private static byte[] LoginReadLine(NetworkStream stream, int timeoutMs) {
             if (stream == null) return null;
 
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
@@ -514,11 +545,14 @@ namespace Manager {
             // 去掉末尾的 \r（skynet 标准是 \n，但也容错 \r\n）
             int end = raw.Length;
             if (end > 0 && raw[end - 1] == (byte)'\r') end--;
-            return Encoding.UTF8.GetString(raw, 0, end);
+            if (end == 0) return new byte[0];
+            var line = new byte[end];
+            Buffer.BlockCopy(raw, 0, line, 0, end);
+            return line;
         }
 
-        private IEnumerator CoReadLineAndThen(NetworkStream stream, Action<string> onLine) {
-            string line = LoginReadLine(stream, (int)(GameSettings.NET_RPC_TIMEOUT_SEC * 1000));
+        private IEnumerator CoReadLineAndThen(NetworkStream stream, Action<byte[]> onLine) {
+            byte[] line = LoginReadLine(stream, (int)(GameSettings.NET_RPC_TIMEOUT_SEC * 1000));
             // 注意：协程里调用方依然要再判一次 stage guard,避免阶段已变
             onLine?.Invoke(line);
             yield break;
@@ -539,16 +573,12 @@ namespace Manager {
         }
 
         // ---------- token 编码 ----------
-        // 对应 Lua:
-        //   string.format("%s@%s:%s",
-        //       crypt.base64encode(token.user),
-        //       crypt.base64encode(token.server),
-        //       crypt.base64encode(token.pass))
-        // 之后整体走 crypt.desencode(secret, ...) + base64。
-        public static string EncodeToken(string user, string server, string pass) {
-            return SecureHandshake.Base64Encode(Encoding.UTF8.GetBytes(user)) + "@" +
-                   SecureHandshake.Base64Encode(Encoding.UTF8.GetBytes(server)) + ":" +
-                   SecureHandshake.Base64Encode(Encoding.UTF8.GetBytes(pass));
+        public string EncodeToken(string user, string server, string pass) {
+            // Base64Encode 返回 ASCII base64 字符串, 走 <string> 拿 string 即可.
+            // ⚠ 不要用 <byte[]>, byte[].ToString() = "System.Byte[]" 会污染 token.
+            return CallLuaFunc<string>("Base64Encode", user) + "@" +
+                   CallLuaFunc<string>("Base64Encode", server) + ":" +
+                   CallLuaFunc<string>("Base64Encode", pass);
         }
 
         // ---------- login socket 生命周期 ----------
@@ -560,6 +590,20 @@ namespace Manager {
             _clientKey = null;
             _loginChallenge = null;
             _loginSecret = null;
+        }
+        void OnDestroy()
+        {
+            // 资源释放，顺序不能乱
+            if (_cryptModule != null)
+            {
+                _cryptModule.Dispose();
+                _cryptModule = null;
+            }
+            if (_luaEnv != null)
+            {
+                _luaEnv.Dispose();
+                _luaEnv = null;
+            }
         }
     }
 }
