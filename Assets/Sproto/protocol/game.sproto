@@ -7,6 +7,8 @@
 handshake 1 {
 	response {
 		result 0 : integer
+		uid 1 : integer
+		dataVersion 2 : integer
 	}
 }
 
@@ -17,3 +19,35 @@ heartbeat 2 {
 }
 
 register 3 {}
+
+getPlayerData 4 {
+	request {
+		uid 0 : integer
+		version 1 : integer
+	}
+	response {
+		result 0 : integer
+		version 1 : integer
+		level 2 : integer
+		exp 3 : integer
+		reason 4 : integer
+		charList 5 : *charData
+		squad 6 : *string
+		desktopChar 7 : string
+		items 8 : *itemStack
+		permissions 9 : *string
+	}
+}
+
+charData {
+	id 0 : string
+	elite 1 : integer
+	level 2 : integer
+	exp 3 : integer
+	trust 4 : integer
+}
+
+itemStack {
+	id 0 : integer
+	amount 1 : integer
+}
