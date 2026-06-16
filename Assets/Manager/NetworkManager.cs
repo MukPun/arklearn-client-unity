@@ -97,12 +97,6 @@ namespace Manager {
             NetReceiver.Init();
             NetCore.enabled = true;
 
-            // 订阅 game server 的 handshake 响应。
-            // 注：当前 game.sproto 只生成了 handshake.response（无 request 类），
-            // 所以 Phase 2 的握手包本身无 payload，server 端按 protocol.tag 识别即可。
-            // 字段名（如未来要带 subid/secret）需要按真实 sproto 调整。
-            NetReceiver.AddHandler<Protocol.handshake>(OnGameHandshakeResponseHandler);
-
             // 1. Lua虚拟机初始化
             _luaEnv = new LuaEnv();
             _luaEnv.AddBuildin("crypt", XLua.LuaDLL.Lua.LoadCrypt);
@@ -478,22 +472,24 @@ namespace Manager {
             // 200 OK -> 切到现有 sproto 握手阶段
             ChangeStage(Stage.GameHandshaking);
             StartWatchdog(Stage.GameHandshaking, GameSettings.NET_RPC_TIMEOUT_SEC);
-            NetSender.Send<Protocol.handshake>();   // 现有 sproto 握手, 不动
+            NetSender.Send<Protocol.handshake>(null, OnGameHandshakeResponseHandler);   // 现有 sproto 握手, 不动
+            NetSender.Send<Protocol.heartbeat>(null, OnHeartbeatRpcResponse);           // 首次心跳
         }
 
-        private SprotoTypeBase OnGameHandshakeResponseHandler(SprotoTypeBase raw) {
+        private void OnGameHandshakeResponseHandler(SprotoTypeBase raw) {
             // 防止 GameHandshaking 已被 Disconnected 替代时（用户在等待时退出/重连）
-            if (CurrentStage != Stage.GameHandshaking) return null;
-
+            if (CurrentStage != Stage.GameHandshaking) return;
             var rsp = raw as SprotoType.handshake.response;
-            if (rsp != null && rsp.HasMsg && rsp.msg != "ok" && !string.IsNullOrEmpty(rsp.msg)) {
-                Fail(Stage.GameHandshaking, $"handshake reject: {rsp.msg}");
-                return null;
+            // game.sproto: handshake.response { result 0 : integer }
+            // sproto 标准约定: 1 = 成功, 非 0 = 错误码
+            if (rsp != null && rsp.HasResult && rsp.result != 1) {
+                Fail(Stage.GameHandshaking, $"handshake reject: result={rsp.result}");
+                return;
             }
 
             ChangeStage(Stage.Online);
             OnOnline?.Invoke();
-            return null;   // handshake 单向宣告，不回包
+            return;   // handshake 单向宣告，不回包
         }
 
         // =====================================================================
@@ -505,8 +501,31 @@ namespace Manager {
             if (_heartbeatTimer >= GameSettings.NET_HEARTBEAT_INTERVAL_SEC) {
                 _heartbeatTimer = 0;
                 // Protocol.heartbeat tag=2,无 request / response payload
-                NetSender.Send<Protocol.heartbeat>();
+                NetSender.Send<Protocol.heartbeat>(null, OnHeartbeatRpcResponse);
             }
+        }
+        /// <summary>
+        /// heartbeat 的 RPC response 回调。 
+        /// 由 NetSender.Send<T>(req, this) 自动注册到 sessionDict，
+        /// dispatcher 收到 type=0, session=K 的包时按 session 找到这里。
+        /// </summary>
+        private void OnHeartbeatRpcResponse(SprotoTypeBase rpcRsp) {
+            // 协议层 decode 出来的实例，类型由 NetSender.sessionDict[session].Response 决定
+            Debug.Log("[Net] heartbeat response: " + rpcRsp.GetType().Name);
+            var rsp = rpcRsp as SprotoType.heartbeat.response;
+            if (rsp == null) {
+                Debug.LogWarning("[Net] heartbeat response type mismatch");
+                return;
+            }
+
+            // game.sproto: response { result 1 : integer }
+            if (rsp.HasResult && rsp.result != 2) {
+                // server 拒接 / 踢人 / 维护
+                Fail(Stage.Online, $"heartbeat reject: result={rsp.result}");
+            }
+
+            // 正常路径：可以更新 _lastHeartbeatAckTime / 统计成功率 / 等
+            // 什么都不做也行
         }
 
         // =====================================================================

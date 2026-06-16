@@ -1,12 +1,19 @@
 .package {
-  type 0 : integer
-  session 1 : integer
+	type 0 : integer
+	session 1 : integer
+	ud 2 : string
 }
 
 handshake 1 {
 	response {
-		msg 0  : string
+		result 0 : integer
 	}
 }
 
-heartbeat 2 {}
+heartbeat 2 {
+	response {
+		result 0 : integer
+	}
+}
+
+register 3 {}

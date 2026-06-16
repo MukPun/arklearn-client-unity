@@ -47,5 +47,9 @@ namespace Settings {
 
         // 心跳间隔（秒）。skynet 标准做法是 5 秒一次
         public const float  NET_HEARTBEAT_INTERVAL_SEC = 5f;
+        // 
+        public const int MinLuaNetSessionID = System.Int32.MaxValue/2;
+        // 
+        public const int MaxLuaNetSessionID = System.Int32.MaxValue;
     }
 }

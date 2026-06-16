@@ -12,12 +12,12 @@ namespace SprotoType {
 			private static int max_field_count = 1;
 			
 			
-			private string _msg; // tag 0
-			public string msg {
-				get { return _msg; }
-				set { base.has_field.set_field (0, true); _msg = value; }
+			private Int64 _result; // tag 0
+			public Int64 result {
+				get { return _result; }
+				set { base.has_field.set_field (0, true); _result = value; }
 			}
-			public bool HasMsg {
+			public bool HasResult {
 				get { return base.has_field.has_field (0); }
 			}
 
@@ -32,7 +32,7 @@ namespace SprotoType {
 				while (-1 != (tag = base.deserialize.read_tag ())) {
 					switch (tag) {
 					case 0:
-						this.msg = base.deserialize.read_string ();
+						this.result = base.deserialize.read_integer ();
 						break;
 					default:
 						base.deserialize.read_unknow_data ();
@@ -45,7 +45,57 @@ namespace SprotoType {
 				base.serialize.open (stream);
 
 				if (base.has_field.has_field (0)) {
-					base.serialize.write_string (this.msg, 0);
+					base.serialize.write_integer (this.result, 0);
+				}
+
+				return base.serialize.close ();
+			}
+		}
+
+
+	}
+
+
+	public class heartbeat {
+	
+		public class response : SprotoTypeBase {
+			private static int max_field_count = 1;
+			
+			
+			private Int64 _result; // tag 0
+			public Int64 result {
+				get { return _result; }
+				set { base.has_field.set_field (0, true); _result = value; }
+			}
+			public bool HasResult {
+				get { return base.has_field.has_field (0); }
+			}
+
+			public response () : base(max_field_count) {}
+
+			public response (byte[] buffer) : base(max_field_count, buffer) {
+				this.decode ();
+			}
+
+			protected override void decode () {
+				int tag = -1;
+				while (-1 != (tag = base.deserialize.read_tag ())) {
+					switch (tag) {
+					case 0:
+						this.result = base.deserialize.read_integer ();
+						break;
+					default:
+						base.deserialize.read_unknow_data ();
+						break;
+					}
+				}
+			}
+
+			public override int encode (SprotoStream stream) {
+				base.serialize.open (stream);
+
+				if (base.has_field.has_field (0)) {
+					base.serialize.write_integer (this.result, 0);
 				}
 
 				return base.serialize.close ();
@@ -57,7 +107,7 @@ namespace SprotoType {
 
 
 	public class package : SprotoTypeBase {
-		private static int max_field_count = 2;
+		private static int max_field_count = 3;
 		
 		
 		private Int64 _type; // tag 0
@@ -78,6 +128,15 @@ namespace SprotoType {
 			get { return base.has_field.has_field (1); }
 		}
 
+		private string _ud; // tag 2
+		public string ud {
+			get { return _ud; }
+			set { base.has_field.set_field (2, true); _ud = value; }
+		}
+		public bool HasUd {
+			get { return base.has_field.has_field (2); }
+		}
+
 		public package () : base(max_field_count) {}
 
 		public package (byte[] buffer) : base(max_field_count, buffer) {
@@ -93,6 +152,9 @@ namespace SprotoType {
 					break;
 				case 1:
 					this.session = base.deserialize.read_integer ();
+					break;
+				case 2:
+					this.ud = base.deserialize.read_string ();
 					break;
 				default:
 					base.deserialize.read_unknow_data ();
@@ -112,6 +174,10 @@ namespace SprotoType {
 				base.serialize.write_integer (this.session, 1);
 			}
 
+			if (base.has_field.has_field (2)) {
+				base.serialize.write_string (this.ud, 2);
+			}
+
 			return base.serialize.close ();
 		}
 	}
@@ -127,6 +193,9 @@ public class Protocol : ProtocolBase {
 		Protocol.SetResponse<SprotoType.handshake.response> (handshake.Tag);
 
 		Protocol.SetProtocol<heartbeat> (heartbeat.Tag);
+		Protocol.SetResponse<SprotoType.heartbeat.response> (heartbeat.Tag);
+
+		Protocol.SetProtocol<register> (register.Tag);
 
 	}
 
@@ -136,6 +205,10 @@ public class Protocol : ProtocolBase {
 
 	public class heartbeat {
 		public const int Tag = 2;
+	}
+
+	public class register {
+		public const int Tag = 3;
 	}
 
 }
