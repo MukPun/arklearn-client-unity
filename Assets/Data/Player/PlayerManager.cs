@@ -19,6 +19,9 @@ namespace Data.Player {
             return playerData;
         }
 
+        /// <summary>切换当前激活玩家。PlayerDataSync 在 server 数据到达时调用。</summary>
+        public void SetActive(PlayerData data) => playerData = data;
+
         public PlayerData Login(string name,string password) {
             playerData = null;
             foreach (PlayerData data in list) {
