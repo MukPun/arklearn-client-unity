@@ -49,6 +49,9 @@ namespace Manager {
             // Phase 2：sproto 握手（用 NetCore）
             GameConnecting,
             GameHandshaking,
+
+            // Phase 2.5:业务数据同步(getPlayerData)
+            PlayerSync,                  // 等待 PlayerDataSync.FetchAndApply 完成
             Online,
         }
 
@@ -479,19 +482,44 @@ namespace Manager {
         }
 
         private void OnGameHandshakeResponseHandler(SprotoTypeBase raw) {
-            // 防止 GameHandshaking 已被 Disconnected 替代时（用户在等待时退出/重连）
             if (CurrentStage != Stage.GameHandshaking) return;
             var rsp = raw as SprotoType.handshake.response;
-            // game.sproto: handshake.response { result 0 : integer }
-            // sproto 标准约定: 1 = 成功, 非 0 = 错误码
-            if (rsp != null && rsp.HasResult && rsp.result != 1) {
-                Fail(Stage.GameHandshaking, $"handshake reject: result={rsp.result}");
+            if (rsp == null || !rsp.HasResult || rsp.result != 1) {
+                Fail(Stage.GameHandshaking, $"handshake reject: result={rsp?.result}");
                 return;
             }
 
-            ChangeStage(Stage.Online);
-            OnOnline?.Invoke();
-            return;   // handshake 单向宣告，不回包
+            // 解析新增字段:uid(写进 SessionInfo)+ dataVersion
+            long uid = rsp.HasUid ? rsp.uid : 0;
+            int dataVersion = rsp.HasDataVersion ? (int)rsp.dataVersion : 0;
+            if (rsp.HasUid) {
+                SessionInfo.Inst().Uid = uid;   // Step 3 暴露 setter 后可用
+            }
+            Debug.Log($"[Net] handshake ok uid={uid} dataVersion={dataVersion}");
+
+            // 切到 PlayerSync 阶段(skynet 协议只回了鉴权结果,业务数据走 getPlayerData)
+            ChangeStage(Stage.PlayerSync);
+            StartWatchdog(Stage.PlayerSync, GameSettings.NET_RPC_TIMEOUT_SEC);
+
+            // 触发 PlayerDataSync。完成后由 PlayerDataSync.OnPlayerReady → 这里转 OnOnline
+            // 静态事件需要清旧订阅(避免 BeginLogin 多次调用时 handler 堆叠)
+            PlayerDataSync.OnPlayerReady = null;
+            PlayerDataSync.OnPlayerReady += v => {
+                if (CurrentStage != Stage.PlayerSync) return;
+                ChangeStage(Stage.Online);
+                OnOnline?.Invoke();
+            };
+            PlayerDataSync.OnPlayerReadyFailed = null;
+            PlayerDataSync.OnPlayerReadyFailed += reason => {
+                // 同步失败:不回退到 Disconnected(否则玩家连登录都进不去),
+                // 而是允许"用过期本地数据"进入,UI 给个警告横幅
+                Debug.LogWarning($"[Net] PlayerData sync failed: {reason}, fallback to local data");
+                if (CurrentStage != Stage.PlayerSync) return;
+                ChangeStage(Stage.Online);
+                OnOnline?.Invoke();
+            };
+
+            StartCoroutine(PlayerDataSync.FetchAndApply(uid, dataVersion));
         }
 
         // =====================================================================

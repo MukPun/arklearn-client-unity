@@ -7,7 +7,7 @@ namespace Data.Player {
     /// SessionInfo 管「网络会话凭证」。
     /// </summary>
     public class SessionInfo : Single<SessionInfo> {
-        public long   Uid       { get; private set; }
+        public long   Uid       { get; set; }
         public string   SubId     { get; private set; }
         public byte[] Secret    { get; private set; }
         public string GameHost  { get; private set; }
