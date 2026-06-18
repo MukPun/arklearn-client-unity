@@ -161,5 +161,122 @@ namespace Data.Player {
         public bool HasItem(ItemStack item) => HasItem(item.GetId(), item.GetAmount());
 
         public bool HasItem(int id, int amount) => GetItemAmount(id) >= amount;
+
+        // ===== 网络同步钩子(2026-06-17 计划新增) =====
+        /// <summary>
+        /// 把服务器响应数据原样覆盖到本地字段。
+        /// 由 PlayerDataSync 在 handshake/version 比对后调用。
+        ///
+        /// 设计要点:
+        /// - 这是「覆盖」语义(不是 merge):server 权威
+        /// - 不做 null 防御:server 协议保证字段全有,rsp==null 视为协议错误
+        /// - squad 必须是长度 4 的数组(项目原有约束,见 GetSquad()),不够时补空字符串
+        /// - 复制本地不可变视图(返回 List<CharData> 等的调用方仍看到旧引用)
+        /// </summary>
+        public void ApplyServerData(SprotoType.getPlayerData.response rsp) {
+            if (rsp == null) {
+                Debug.LogError("[PlayerData] ApplyServerData called with null response");
+                return;
+            }
+            // sproto integer 字段都是 Int64,PlayerData 的对应字段是 int,需要显式收窄。
+            // 业务上 server 不会下发超出 int 范围的玩家等级/经验等,直接 (int) 转换安全。
+            level = (int)rsp.level;
+            exp = (int)rsp.exp;
+            reason = (int)rsp.reason;
+            desktopChar = rsp.desktopChar ?? string.Empty;
+
+            charList = new List<CharData>();
+            if (rsp.charList != null) {
+                foreach (var c in rsp.charList) {
+                    var cd = new CharData(c.id);
+                    cd.elite = (int)c.elite;
+                    cd.level = (int)c.level;
+                    cd.exp = (int)c.exp;
+                    cd.trust = (int)c.trust;
+                    charList.Add(cd);
+                }
+            }
+
+            squad = (rsp.squad != null ? rsp.squad.ToList() : new List<string>()).ToArray();
+            if (squad.Length != 4) {
+                var padded = new List<string>(squad);
+                while (padded.Count < 4) padded.Add(string.Empty);
+                squad = padded.ToArray();
+            }
+
+            items = new List<ItemStack>();
+            if (rsp.items != null) {
+                foreach (var i in rsp.items) {
+                    items.Add(new ItemStack((int)i.id, (int)i.amount));
+                }
+            }
+            ItemSort();
+
+            permissions = rsp.permissions != null
+                ? rsp.permissions.ToList()
+                : new List<string>();
+        }
+
+        /// <summary>
+        /// 把当前 PlayerData 序列化成 LocalCache.Snapshot。
+        /// 写入 LocalCache 前的统一入口,避免 PlayerDataSync 直接窥探私有字段。
+        /// </summary>
+        public LocalCache.Snapshot ToSnapshot() {
+            var snap = new LocalCache.Snapshot {
+                version = 0,    // 由 PlayerDataSync 在 Write 时覆盖
+                level = level,
+                exp = exp,
+                reason = reason,
+                desktopChar = desktopChar ?? string.Empty,
+                charList = charList?.Select(c => new LocalCache.CharSnap {
+                    id = c.GetId(), elite = c.GetElite(),
+                    level = c.GetLevel(), exp = c.GetExp(), trust = c.GetTrust()
+                }).ToArray(),
+                squad = squad,
+                items = items?.Select(i => new LocalCache.ItemSnap {
+                    id = i.GetId(), amount = i.GetAmount()
+                }).ToArray(),
+                permissions = permissions?.ToArray() ?? new string[0]
+            };
+            return snap;
+        }
+
+        /// <summary>
+        /// 从 LocalCache.Snapshot 反向填充(用于「本地版本匹配时跳过 RPC」场景)。
+        /// 镜像 ApplyServerData 的字段映射,保证两条路径结果一致。
+        /// </summary>
+        public void ApplySnapshot(LocalCache.Snapshot snap) {
+            if (snap == null) return;
+            level = snap.level;
+            exp = snap.exp;
+            reason = snap.reason;
+            desktopChar = snap.desktopChar ?? string.Empty;
+
+            charList = new List<CharData>();
+            if (snap.charList != null) {
+                foreach (var c in snap.charList) {
+                    var cd = new CharData(c.id);
+                    cd.elite = c.elite;
+                    cd.level = c.level;
+                    cd.exp = c.exp;
+                    cd.trust = c.trust;
+                    charList.Add(cd);
+                }
+            }
+
+            squad = snap.squad ?? new string[4];
+
+            items = new List<ItemStack>();
+            if (snap.items != null) {
+                foreach (var i in snap.items) {
+                    items.Add(new ItemStack(i.id, i.amount));
+                }
+            }
+            ItemSort();
+
+            permissions = snap.permissions != null
+                ? snap.permissions.ToList()
+                : new List<string>();
+        }
     }
 }

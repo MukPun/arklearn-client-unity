@@ -12,19 +12,19 @@ namespace Data.Char {
 
         // 阶级(0-2)
         [SerializeField]
-        private int elite;
+        internal int elite;
 
         // 等级 (0 - getMaxLevel)
         [SerializeField]
-        private int level;
+        internal int level;
 
-        // 经验 
+        // 经验
         [SerializeField]
-        private int exp;
+        internal int exp;
 
         // 信赖值
         [SerializeField]
-        private int trust;
+        internal int trust;
         
         // 元数据 (不存储）
         private CharMeta data;
