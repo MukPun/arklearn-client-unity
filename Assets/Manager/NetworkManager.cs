@@ -386,7 +386,9 @@ namespace Manager {
                 return;
             }
             // login 服响应成功：关闭 login socket、缓存 session、转入 game
-            long uid = 0;   // login 服目前未下发 uid；进入 game 后由 handshake 拿
+            // uid 由 game 服 handshake.response 下发(见 game.sproto handshake.uid)
+            // login 服目前不下发,先存 0 占位,OnGameHandshakeResponseHandler 里再用真实值覆盖 SessionInfo
+            long uid = 0;
             byte[] secret = _loginSecret;
             CloseLoginSocket();
 
