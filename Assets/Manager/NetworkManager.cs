@@ -503,13 +503,12 @@ namespace Manager {
 
             // 触发 PlayerDataSync。完成后由 PlayerDataSync.OnPlayerReady → 这里转 OnOnline
             // 静态事件需要清旧订阅(避免 BeginLogin 多次调用时 handler 堆叠)
-            PlayerDataSync.OnPlayerReady = null;
+            PlayerDataSync.Reset();
             PlayerDataSync.OnPlayerReady += v => {
                 if (CurrentStage != Stage.PlayerSync) return;
                 ChangeStage(Stage.Online);
                 OnOnline?.Invoke();
             };
-            PlayerDataSync.OnPlayerReadyFailed = null;
             PlayerDataSync.OnPlayerReadyFailed += reason => {
                 // 同步失败:不回退到 Disconnected(否则玩家连登录都进不去),
                 // 而是允许"用过期本地数据"进入,UI 给个警告横幅

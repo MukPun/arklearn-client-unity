@@ -30,6 +30,16 @@ namespace Data.Player {
         public static event Action<string> OnPlayerReadyFailed;
 
         /// <summary>
+        /// 清空所有 OnPlayerReady / OnPlayerReadyFailed 订阅。
+        /// 只能在事件声明者内部把 event 字段置 null;外部调用此方法达到同样效果。
+        /// NetworkManager 在每次 BeginLogin 重新挂订阅前调用,避免多次登录时 handler 堆叠。
+        /// </summary>
+        public static void Reset() {
+            OnPlayerReady = null;
+            OnPlayerReadyFailed = null;
+        }
+
+        /// <summary>
         /// 同步入口。返回 IEnumerator 给 NetworkManager 协程驱动。
         /// 失败时**不抛异常**,只触发 OnPlayerReadyFailed —— 让上层决定 UI 行为。
         /// </summary>
