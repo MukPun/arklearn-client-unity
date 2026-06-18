@@ -76,6 +76,7 @@ namespace Manager {
         // BeginLogin 携带的账号信息（用于 Phase 1 token 编码）
         private string _loginUser;
         private string _loginPassword;
+        private long _loginUid;       // 角色唯一id
         private string _loginServer = "10001";   // 固定为 10001（暂不开放选服）
 
         // 心跳计时器
@@ -379,11 +380,15 @@ namespace Manager {
                 Fail(Stage.LoginParseResponse, $"login rejected: '{line}'");
                 return;
             }
-            string subidB64 = line.Substring(4);  // 跳过 "200 " 获取后面的 subid
+            string resB64 = line.Substring(4);  // 跳过 "200 " 获取后面的 subid
             string subid;
+            long uid;
             try {
-                subid = CallLuaFunc<string>("Base64Decode", subidB64);
-                Debug.Log("subid = " + subid);
+                string res = CallLuaFunc<string>("Base64Decode", resB64);
+                string[] arr = res.Split(':');
+                subid = arr[0];
+                uid = long.Parse(arr[1]);
+                Debug.Log("subid = " + subid + " uid= " + uid);
             } catch (Exception e) {
                 Fail(Stage.LoginParseResponse, $"decode subid failed: {e.Message}");
                 return;
@@ -391,12 +396,12 @@ namespace Manager {
             // login 服响应成功：关闭 login socket、缓存 session、转入 game
             // uid 由 game 服 handshake.response 下发(见 game.sproto handshake.uid)
             // login 服目前不下发,先存 0 占位,OnGameHandshakeResponseHandler 里再用真实值覆盖 SessionInfo
-            long uid = 0;
             byte[] secret = _loginSecret;
             CloseLoginSocket();
 
-            // 缓存 subid, 后续 game 服文本握手要用 (OnGameSocketConnected 里)
+            // 缓存 subid、uid 后续 game 服文本握手要用 (OnGameSocketConnected 里)
             _loginSubid = subid;
+            _loginUid = uid;
 
             SessionInfo.Inst().SaveLoginResponse(
                 uid, subid,
@@ -436,7 +441,7 @@ namespace Manager {
             //    格式: base64(user)@base64(server)#base64(subid):1
             //    index = 1 (跟官方 Lua 参考一致, skynet 协议默认)
             string index = "1";
-            string userB64   = CallLuaFunc<string>("Base64Encode", _loginUser);
+            string userB64   = CallLuaFunc<string>("Base64Encode", _loginUid);
             string serverB64 = CallLuaFunc<string>("Base64Encode", _loginServer);
             string subidB64  = CallLuaFunc<string>("Base64Encode", _loginSubid);
             string handshake = $"{userB64}@{serverB64}#{subidB64}:{index}";
