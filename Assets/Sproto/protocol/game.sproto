@@ -39,7 +39,7 @@ getPlayerData 4 {
 	}
 }
 
-charData {
+.charData {
 	id 0 : string
 	elite 1 : integer
 	level 2 : integer
@@ -47,7 +47,7 @@ charData {
 	trust 4 : integer
 }
 
-itemStack {
+.itemStack {
 	id 0 : integer
 	amount 1 : integer
 }
